@@ -1,0 +1,2098 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Doneit</title>
+<style>
+  /* ---------- Light theme (default) ---------- */
+  :root, [data-theme="light"] {
+    --bg: #f4f1ec;
+    --bg-2: #ebe6dd;
+    --bg-grad: linear-gradient(180deg, #f4f1ec 0%, #ede7dc 100%);
+    --ink: #1a1a1a;
+    --ink-2: #6b6b6b;
+    --ink-3: #a0a0a0;
+    --card-body: #ffffff;
+    --line: #e7e2d8;
+    --shadow: none;
+    --on-card: #1a1a1a;
+    --on-card-soft: #6b6b6b;
+    --pill-border: rgba(255,255,255,0.85);
+    --dash: rgba(0,0,0,0.1);
+
+    --p0: #DE6D20;
+    --p1: #4A644D;
+    --p2: #515151;
+    --p3: #DCDCDC;
+  }
+
+  /* ---------- Dark theme: neutral grey gradient ---------- */
+  [data-theme="dark"] {
+    --bg: #2a2a2e;
+    --bg-2: #1f1f23;
+    --bg-grad: linear-gradient(180deg, #3a3a40 0%, #25252a 50%, #18181b 100%);
+    --ink: #f5f5f7;
+    --ink-2: #c4c4cc;
+    --ink-3: #8a8a92;
+    --card-body: #2a2a2e;
+    --line: rgba(255,255,255,0.1);
+    --shadow: none;
+    --on-card: #ffffff;
+    --on-card-soft: rgba(255,255,255,0.85);
+    --pill-border: rgba(255,255,255,0.85);
+    --dash: rgba(255,255,255,0.3);
+
+    --p0: #DE6D20;
+    --p1: #4A644D;
+    --p2: #515151;
+    --p3: #DCDCDC;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    background: var(--bg-grad);
+    background-attachment: fixed;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    -webkit-user-select: none; user-select: none;
+  }
+
+  #app {
+    max-width: 460px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: transparent;
+  }
+
+  /* Sticky header — opaque so the wordmark and icons stay readable
+     regardless of what's scrolling behind it. */
+  header {
+    position: sticky; top: 0;
+    background: var(--bg);
+    z-index: 50;
+    padding: 18px 18px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+  }
+  .icon-btn {
+    width: 40px; height: 40px;
+    border-radius: 12px; border: none;
+    background: var(--bg-2);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.15s;
+  }
+  .icon-btn:active { transform: scale(0.94); }
+  .icon-btn svg { width: 20px; height: 20px; stroke: var(--ink); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .brand {
+    font-size: 22px; font-weight: 800; letter-spacing: -0.6px;
+    color: #DE6D20;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .brand .i-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #DE6D20;
+    flex-shrink: 0;
+  }
+
+  /* ---------- Search bar (slides in) ---------- */
+  .search-wrap {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.25s ease, padding 0.25s ease;
+    padding: 0 18px;
+    background: var(--bg);
+  }
+  .search-wrap.open { max-height: 70px; padding: 6px 18px 12px; }
+  .search-wrap input {
+    width: 100%; padding: 12px 14px;
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--bg-2); color: var(--ink);
+    font-size: 15px;
+    outline: none; font-family: inherit;
+  }
+  .search-wrap input::placeholder { color: var(--ink-3); }
+  .search-wrap input:focus { border-color: var(--p1); }
+
+  /* ---------- Feed ---------- */
+  main {
+    flex: 1;
+    padding: 14px 18px 120px;
+    overflow-y: auto;
+  }
+  .feed-heading {
+    font-size: 13px; font-weight: 600; color: var(--ink-2);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin: 6px 4px 12px;
+  }
+  .empty {
+    text-align: center; padding: 60px 20px; color: var(--ink-3);
+  }
+  .empty .emo { font-size: 48px; margin-bottom: 10px; }
+  .empty .h { font-size: 16px; font-weight: 600; color: var(--ink-2); }
+  .empty .s { font-size: 13px; margin-top: 4px; }
+
+  /* ---------- Coupon card ---------- */
+  .card {
+    position: relative;
+    margin-bottom: 18px;
+    border-radius: 22px;
+    background: var(--card-body);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    animation: rise 0.35s ease;
+  }
+  /* Light theme: card body is plain white by default; priority rules below
+     override this so the entire card carries the priority color. */
+  [data-theme="light"] .card,
+  [data-theme="light"] .stack-card { background: #ffffff; }
+
+  /* Both themes: whole card is the solid priority color */
+  .card.p0, .stack-card.p0 { background: var(--p0); }
+  .card.p1, .stack-card.p1 { background: var(--p1); }
+  .card.p2, .stack-card.p2 { background: var(--p2); }
+  .card.p3, .stack-card.p3 { background: var(--p3); }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .card.completed { }
+
+  .ticket {
+    position: relative;
+    padding: 14px 16px 14px 16px;
+    color: white;
+    display: flex; align-items: center; justify-content: space-between;
+    font-weight: 600;
+  }
+  /* Priority colors on ticket header + adaptive text color */
+  .ticket.p0 { background: var(--p0); color: var(--p0-on); }
+  .ticket.p1 { background: var(--p1); color: var(--p1-on); }
+  .ticket.p2 { background: var(--p2); color: var(--p2-on); }
+  .ticket.p3 { background: var(--p3); color: var(--p3-on); }
+
+  .ticket .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: transparent;
+    border: 1.5px solid currentColor;
+    padding: 4px 12px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+    opacity: 0.92;
+  }
+  .ticket .date {
+    font-size: 12px; font-weight: 500; opacity: 0.85;
+  }
+
+  /* Card body text adapts to priority color */
+  .card.p0 .title, .card.p0 .check-label, .stack-card.p0 .title, .stack-card.p0 .check-label { color: var(--p0-on); }
+  .card.p1 .title, .card.p1 .check-label, .stack-card.p1 .title, .stack-card.p1 .check-label { color: var(--p1-on); }
+  .card.p2 .title, .card.p2 .check-label, .stack-card.p2 .title, .stack-card.p2 .check-label { color: var(--p2-on); }
+  .card.p3 .title, .card.p3 .check-label, .stack-card.p3 .title, .stack-card.p3 .check-label { color: var(--p3-on); }
+
+  /* Checkbox border + checkmark adapt to card priority */
+  .card.p0 .checkbox, .stack-card.p0 .checkbox { border-color: color-mix(in srgb, var(--p0-on) 60%, transparent); }
+  .card.p1 .checkbox, .stack-card.p1 .checkbox { border-color: color-mix(in srgb, var(--p1-on) 60%, transparent); }
+  .card.p2 .checkbox, .stack-card.p2 .checkbox { border-color: color-mix(in srgb, var(--p2-on) 60%, transparent); }
+  .card.p3 .checkbox, .stack-card.p3 .checkbox { border-color: color-mix(in srgb, var(--p3-on) 60%, transparent); }
+  .card.p0 .checkbox.checked, .stack-card.p0 .checkbox.checked { background: var(--p0-on); border-color: var(--p0-on); }
+  .card.p1 .checkbox.checked, .stack-card.p1 .checkbox.checked { background: var(--p1-on); border-color: var(--p1-on); }
+  .card.p2 .checkbox.checked, .stack-card.p2 .checkbox.checked { background: var(--p2-on); border-color: var(--p2-on); }
+  .card.p3 .checkbox.checked, .stack-card.p3 .checkbox.checked { background: var(--p3-on); border-color: var(--p3-on); }
+  .card.p0 .checkbox.checked svg, .stack-card.p0 .checkbox.checked svg { stroke: var(--p0); }
+  .card.p1 .checkbox.checked svg, .stack-card.p1 .checkbox.checked svg { stroke: var(--p1); }
+  .card.p2 .checkbox.checked svg, .stack-card.p2 .checkbox.checked svg { stroke: var(--p2); }
+  .card.p3 .checkbox.checked svg, .stack-card.p3 .checkbox.checked svg { stroke: var(--p3); }
+
+  /* Delete button on card */
+  .card.p0 .delete-btn, .stack-card.p0 .delete-btn { color: color-mix(in srgb, var(--p0-on) 70%, transparent); }
+  .card.p1 .delete-btn, .stack-card.p1 .delete-btn { color: color-mix(in srgb, var(--p1-on) 70%, transparent); }
+  .card.p2 .delete-btn, .stack-card.p2 .delete-btn { color: color-mix(in srgb, var(--p2-on) 70%, transparent); }
+  .card.p3 .delete-btn, .stack-card.p3 .delete-btn { color: color-mix(in srgb, var(--p3-on) 70%, transparent); }
+
+  /* Card is one solid priority color top-to-bottom, so no notch needed */
+  .ticket::after { display: none; }
+
+  .body {
+    padding: 18px 20px 18px;
+    min-height: 60px;
+  }
+  .title {
+    font-size: 18px; font-weight: 700; line-height: 1.4;
+    color: var(--on-card);
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  .completed .title {
+    text-decoration: line-through;
+    text-decoration-color: currentColor;
+  }
+  .meta {
+    margin-top: 8px; font-size: 13px; color: var(--on-card-soft);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* Perforation row — real transparent half-circle cutouts on each side
+     of the card so the page background shows through, plus a drawn dashed
+     line between them. Applies in both light and dark themes. */
+  .card, .stack-card {
+    --cut-r: 8px;
+    --cut-y: 78px;
+    -webkit-mask:
+      radial-gradient(circle var(--cut-r) at 0    calc(100% - var(--cut-y)), transparent 98%, #000 100%),
+      radial-gradient(circle var(--cut-r) at 100% calc(100% - var(--cut-y)), transparent 98%, #000 100%);
+    -webkit-mask-composite: source-in;
+            mask:
+      radial-gradient(circle var(--cut-r) at 0    calc(100% - var(--cut-y)), transparent 98%, #000 100%),
+      radial-gradient(circle var(--cut-r) at 100% calc(100% - var(--cut-y)), transparent 98%, #000 100%);
+            mask-composite: intersect;
+  }
+
+  /* Perforation row — a thin spacer in the layout. The dashed line is
+     drawn separately on the card itself so it aligns precisely with the
+     half-circle cutout centers. */
+  .perforation {
+    position: relative;
+    height: 12px;
+    margin: 0;
+  }
+  .perforation .dashes { display: none; }
+
+  /* Dashed line drawn on the card, positioned at the exact same Y as
+     the half-circle cutout centers (70px from card bottom). */
+  .card::before, .stack-card::before {
+    content: "";
+    position: absolute;
+    left: 16px; right: 16px;
+    bottom: 78px;          /* matches --cut-y */
+    height: 0;
+    border-top: 1px dashed var(--dash);
+    pointer-events: none;
+  }
+  /* Per-priority dashed line color so it reads on each card color */
+  .card.p0::before, .stack-card.p0::before { border-top-color: color-mix(in srgb, var(--p0-on) 35%, transparent); }
+  .card.p1::before, .stack-card.p1::before { border-top-color: color-mix(in srgb, var(--p1-on) 35%, transparent); }
+  .card.p2::before, .stack-card.p2::before { border-top-color: color-mix(in srgb, var(--p2-on) 35%, transparent); }
+  .card.p3::before, .stack-card.p3::before { border-top-color: color-mix(in srgb, var(--p3-on) 35%, transparent); }
+
+  /* Footer with checkbox */
+  .footer {
+    padding: 14px 18px 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .checkbox {
+    width: 26px; height: 26px;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: all 0.15s;
+    background: transparent;
+  }
+  [data-theme="light"] .checkbox { background: white; border-color: #d8d3c9; }
+  [data-theme="dark"]  .checkbox { border-color: rgba(255,255,255,0.5); }
+  .checkbox:hover { border-color: var(--on-card); }
+  .checkbox.checked { border-color: transparent; }
+  .checkbox.checked.p0 { background: var(--p0); }
+  .checkbox.checked.p1 { background: var(--p1); }
+  .checkbox.checked.p2 { background: var(--p2); }
+  .checkbox.checked.p3 { background: var(--p3); }
+  .checkbox svg {
+    width: 16px; height: 16px;
+    fill: none; stroke: white; stroke-width: 3;
+    stroke-linecap: round; stroke-linejoin: round;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .checkbox.checked svg { opacity: 1; }
+
+  .check-label {
+    font-size: 14px; color: var(--on-card-soft);
+    flex: 1;
+  }
+  .delete-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--on-card-soft); padding: 6px;
+    border-radius: 8px;
+    transition: color 0.15s, background 0.15s;
+    opacity: 0.7;
+  }
+  .delete-btn:hover { opacity: 1; color: #e53935; }
+  .delete-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Light theme stack-card default is overridden by per-priority tint above */
+
+  /* ---------- Floating + button ---------- */
+  .fab {
+    position: fixed;
+    bottom: 96px;
+    left: 50%; transform: translateX(-50%);
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    border: none;
+    background: var(--p1);
+    color: white;
+    box-shadow: 0 8px 22px rgba(251, 140, 0, 0.4), 0 2px 6px rgba(0,0,0,0.1);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 40;
+    transition: transform 0.15s;
+  }
+  .fab:active { transform: translateX(-50%) scale(0.92); }
+  .fab svg { width: 28px; height: 28px; stroke: white; fill: none; stroke-width: 2.5; stroke-linecap: round; }
+
+  /* ---------- Bottom nav ---------- */
+  nav.bottom {
+    position: fixed;
+    left: 50%; transform: translateX(-50%);
+    bottom: 16px;
+    width: calc(100% - 32px); max-width: 428px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 8px;
+    display: flex; gap: 6px;
+    box-shadow: var(--shadow);
+    z-index: 30;
+  }
+  [data-theme="light"] nav.bottom { background: #ffffff; border-color: transparent; }
+  .nav-btn {
+    flex: 1;
+    border: none; background: transparent;
+    padding: 10px 8px;
+    border-radius: 14px;
+    font-size: 13px; font-weight: 600;
+    color: var(--ink-2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background 0.15s, color 0.15s;
+    font-family: inherit;
+  }
+  .nav-btn.active { background: rgba(251, 140, 0, 0.18); color: var(--p1); }
+  .nav-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- Sheet (Add task / Settings) ---------- */
+  .sheet-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed; left: 50%; transform: translateX(-50%) translateY(100%);
+    bottom: 0;
+    width: 100%; max-width: 460px;
+    background: var(--bg);
+    background: var(--bg-grad);
+    border-top: 1px solid var(--line);
+    border-radius: 24px 24px 0 0;
+    padding: 20px 20px 32px;
+    z-index: 101;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    max-height: 85vh; overflow-y: auto;
+    color: var(--ink);
+  }
+  .sheet.open { transform: translateX(-50%) translateY(0); }
+  .sheet h2 {
+    margin: 0 0 16px; font-size: 20px; font-weight: 700;
+    text-align: center;
+    color: var(--ink);
+  }
+  .sheet .grabber {
+    width: 40px; height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+    margin: 0 auto 14px;
+  }
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 8px;
+  }
+  .field input[type="text"] {
+    width: 100%; padding: 14px 16px;
+    border: 1px solid var(--line); border-radius: 14px;
+    background: var(--bg-2); color: var(--ink);
+    font-size: 16px;
+    outline: none; font-family: inherit;
+  }
+  [data-theme="light"] .field input[type="text"] { background: #ffffff; }
+  .field input[type="text"]::placeholder { color: var(--ink-3); }
+  .field input[type="text"]:focus { border-color: var(--p1); }
+
+  .priority-picker {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  }
+  .priority-pick {
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 4px;
+    background: var(--bg-2);
+    cursor: pointer;
+    text-align: center;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  [data-theme="light"] .priority-pick { background: #ffffff; }
+  .priority-pick .swatch {
+    width: 24px; height: 24px; border-radius: 50%; margin: 0 auto 6px;
+  }
+  .priority-pick .pname { font-size: 12px; font-weight: 700; color: var(--ink); }
+  .priority-pick .plabel { font-size: 10px; color: var(--ink-2); margin-top: 2px; }
+  .priority-pick.selected { border-color: var(--ink); }
+  .priority-pick.selected.p0 { border-color: var(--p0); background: rgba(124, 58, 237, 0.18); }
+  .priority-pick.selected.p1 { border-color: var(--p1); background: rgba(251, 140, 0, 0.18); }
+  .priority-pick.selected.p2 { border-color: var(--p2); background: rgba(253, 216, 53, 0.18); }
+  .priority-pick.selected.p3 { border-color: var(--p3); background: rgba(67, 160, 71, 0.18); }
+  .priority-pick .swatch.p0 { background: var(--p0); }
+  .priority-pick .swatch.p1 { background: var(--p1); }
+  .priority-pick .swatch.p2 { background: var(--p2); }
+  .priority-pick .swatch.p3 { background: var(--p3); }
+
+  .save-btn {
+    width: 100%; padding: 16px;
+    border: none; border-radius: 14px;
+    background: var(--p1); color: white;
+    font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    font-family: inherit;
+    transition: transform 0.1s, background 0.15s;
+  }
+  .save-btn:active { transform: scale(0.98); }
+  .save-btn:disabled { background: var(--line); color: var(--ink-3); cursor: not-allowed; }
+
+  .settings-row {
+    background: var(--bg-2);
+    padding: 14px 16px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  [data-theme="light"] .settings-row { background: #ffffff; }
+  .settings-row .muted { color: var(--ink-3); font-size: 13px; }
+
+  /* ---------- Theme picker ---------- */
+  .theme-picker {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .theme-opt {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px;
+    background: var(--bg-2);
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    color: var(--ink);
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  [data-theme="light"] .theme-opt { background: #ffffff; }
+  /* Dark theme button always previews dark, regardless of current theme */
+  .theme-opt[data-theme-pick="dark"] {
+    background: #2a2a2e;
+    color: #ffffff;
+    border-color: #3a3a40;
+  }
+  .theme-opt.selected { border-color: var(--p1); }
+  .theme-opt[data-theme-pick="dark"].selected { border-color: #DE6D20; }
+  .theme-swatch {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    border: 1px solid var(--line);
+  }
+  .theme-swatch.light { background: linear-gradient(135deg, #f4f1ec 0%, #ede7dc 100%); }
+  .theme-swatch.dark  { background: linear-gradient(135deg, #3a3a40 0%, #18181b 100%); }
+
+  /* ---------- Color set picker ---------- */
+  .field-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .field-head label {
+    margin-bottom: 0;
+  }
+  .add-set-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 6px 6px 12px;
+    border-radius: 999px;
+    border: none;
+    background: #DE6D20;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 12px; font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.15s;
+    letter-spacing: 0.3px;
+  }
+  .add-set-btn:hover { opacity: 0.9; }
+  .add-set-btn:active { transform: scale(0.96); }
+  .add-set-label { line-height: 1; }
+  .add-set-plus {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.22);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .add-set-plus svg { width: 12px; height: 12px; stroke: #ffffff; fill: none; stroke-width: 3; stroke-linecap: round; }
+
+  .colorset-list {
+    display: flex; flex-direction: column; gap: 10px;
+    max-height: 360px;
+    overflow-y: auto;
+    padding: 4px 4px 4px 0;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 24px), transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 24px), transparent 100%);
+  }
+  .colorset-list::-webkit-scrollbar { width: 4px; }
+  .colorset-list::-webkit-scrollbar-track { background: transparent; }
+  .colorset-list::-webkit-scrollbar-thumb {
+    background: var(--ink-3);
+    border-radius: 4px;
+    opacity: 0.4;
+  }
+  .colorset-list { scrollbar-width: thin; scrollbar-color: var(--ink-3) transparent; }
+
+  /* "Custom" badge on user-created sets */
+  .colorset-card .custom-badge {
+    background: rgba(222, 109, 32, 0.14);
+    color: #DE6D20;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-left: 6px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+
+  /* ---------- Custom set creator ---------- */
+  .custom-priority-row {
+    margin-bottom: 14px;
+  }
+  .custom-priority-row .row-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .custom-priority-row .row-name {
+    font-size: 14px; font-weight: 700; color: var(--ink);
+  }
+  .custom-priority-row .row-name .label {
+    font-weight: 500; color: var(--ink-2); margin-left: 6px; font-size: 12px;
+  }
+  .custom-priority-row .row-current {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+  }
+  [data-theme="dark"] .custom-priority-row .row-current {
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+  }
+  .swatch-strip {
+    display: flex; gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 4px 8px;
+    scrollbar-width: none;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    cursor: grab;
+  }
+  .swatch-strip::-webkit-scrollbar { display: none; }
+  .swatch-strip.dragging { cursor: grabbing; }
+  .swatch-pick {
+    flex-shrink: 0;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.1s;
+  }
+  [data-theme="dark"] .swatch-pick { /* outline kept transparent */ }
+  .swatch-pick:hover { transform: scale(1.08); }
+  .swatch-pick:active { transform: scale(0.92); }
+  .swatch-pick.selected {
+    border-color: var(--ink);
+  }
+
+  .custom-set-actions {
+    display: flex; gap: 8px;
+    margin-top: 12px;
+    align-items: center;
+  }
+  .custom-set-actions .save-btn { flex: 1; margin-top: 0; }
+  .custom-cancel, .custom-delete {
+    border: none;
+    border-radius: 14px;
+    padding: 16px 20px;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.1s;
+  }
+  .custom-cancel {
+    background: transparent;
+    color: var(--ink-2);
+  }
+  .custom-cancel:active { transform: scale(0.98); }
+  .custom-delete {
+    background: transparent;
+    color: #c0392b;
+  }
+  .custom-delete:active { transform: scale(0.98); }
+  .colorset-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s, transform 0.1s;
+    text-align: left;
+    width: 100%;
+  }
+  [data-theme="dark"] .colorset-card { background: var(--bg-2); }
+  .colorset-card:active { transform: scale(0.99); }
+  .colorset-card.selected { border-color: #DE6D20; }
+  .colorset-name {
+    flex: 1;
+    font-size: 15px; font-weight: 700;
+    color: var(--ink);
+  }
+  .colorset-name .meta {
+    display: block;
+    font-size: 12px; font-weight: 500;
+    color: var(--ink-3);
+    margin-top: 2px;
+    letter-spacing: 0.3px;
+  }
+  .colorset-swatches {
+    display: flex; gap: 5px;
+  }
+  .colorset-swatches span {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+  }
+  [data-theme="dark"] .colorset-swatches span {
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+  }
+  .colorset-check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #DE6D20;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .colorset-card.selected .colorset-check { opacity: 1; }
+  .colorset-check svg {
+    width: 12px; height: 12px;
+    stroke: #ffffff; fill: none; stroke-width: 3;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  /* Inline edit + delete buttons on custom set cards */
+  .colorset-edit, .colorset-delete {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 1px solid #DE6D20;
+    background: transparent;
+    color: #DE6D20;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .colorset-edit { margin-right: 2px; }
+  .colorset-delete { margin-right: 4px; }
+  .colorset-edit:hover {
+    background: #DE6D20;
+    color: #ffffff;
+  }
+  .colorset-delete:hover {
+    background: #c0392b;
+    color: #ffffff;
+    border-color: #c0392b;
+  }
+  .colorset-edit:active, .colorset-delete:active { transform: scale(0.92); }
+  .colorset-edit svg, .colorset-delete svg {
+    width: 13px; height: 13px;
+    stroke: currentColor;
+    fill: none; stroke-width: 2.2;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  .pcolor-hex {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pcolor-hex input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--line); border-radius: 10px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    outline: none;
+    background: var(--bg);
+    text-transform: uppercase;
+  }
+  .pcolor-hex input:focus { border-color: var(--ink); background: white; }
+  .pcolor-hex input.invalid { border-color: var(--p0); }
+  .pcolor-hex .hash { color: var(--ink-3); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; }
+
+  /* ---------- Date filter pills (above feed, All tab only) ---------- */
+  .date-filters {
+    display: flex; gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 12px 18px 6px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    cursor: grab;
+  }
+  .date-filters::-webkit-scrollbar { display: none; }
+  .date-filters.dragging { cursor: grabbing; }
+  .date-pill {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-2);
+    font-family: inherit;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    scroll-snap-align: start;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .date-pill:hover { color: var(--ink); }
+  .date-pill.active {
+    background: #DE6D20;
+    color: #ffffff;
+    border-color: #DE6D20;
+  }
+  .date-pill.more {
+    color: #DE6D20;
+    border-color: color-mix(in srgb, #DE6D20 40%, transparent);
+  }
+  .date-pill.more:hover {
+    background: color-mix(in srgb, #DE6D20 12%, transparent);
+  }
+
+  /* ---------- Dates view ---------- */
+  .date-section {
+    margin-bottom: 28px;
+  }
+  .date-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin: 0 4px 12px;
+  }
+  .date-header .day {
+    font-size: 18px; font-weight: 700; color: var(--ink);
+    letter-spacing: -0.3px;
+  }
+  .date-header .day .relative {
+    font-size: 13px; font-weight: 500; color: var(--ink-3);
+    margin-left: 8px;
+  }
+  .date-header .count {
+    font-size: 12px; font-weight: 600;
+    color: var(--ink-2);
+    background: var(--bg-2);
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+
+  .stack {
+    position: relative;
+    height: 260px;
+    margin: 0 4px;
+    perspective: 1200px;
+  }
+  .stack-card {
+    position: absolute;
+    inset: 0;
+    border-radius: 22px;
+    background: var(--card-body);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s;
+    cursor: grab;
+    touch-action: pan-y;
+    will-change: transform;
+  }
+  .stack-card.dragging { transition: none; cursor: grabbing; }
+
+  .stack-indicators {
+    display: flex; justify-content: center; gap: 6px;
+    margin-top: 12px;
+  }
+  .stack-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--line);
+    transition: background 0.2s, width 0.2s;
+  }
+  .stack-dot.active {
+    background: var(--ink);
+    width: 18px;
+    border-radius: 3px;
+  }
+  .stack-empty {
+    text-align: center; padding: 30px 20px;
+    background: var(--bg-2);
+    border-radius: 18px;
+    color: var(--ink-3);
+    font-size: 14px;
+  }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg-2);
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin: 0 4px 16px;
+    font-size: 14px; font-weight: 500;
+    color: var(--ink);
+  }
+  [data-theme="light"] .toggle-row { background: #ffffff; }
+  .toggle {
+    width: 44px; height: 26px;
+    background: var(--line);
+    border-radius: 999px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle.on { background: var(--p1); }
+  .toggle::after {
+    content: "";
+    position: absolute; top: 3px; left: 3px;
+    width: 20px; height: 20px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+  }
+  .toggle.on::after { transform: translateX(18px); }
+
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Top bar -->
+  <header>
+    <button class="icon-btn" id="settings-btn" aria-label="Settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <div class="brand">Doneit</div>
+    <button class="icon-btn" id="search-btn" aria-label="Search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    </button>
+  </header>
+
+  <div class="search-wrap" id="search-wrap">
+    <input type="text" id="search-input" placeholder="Search tasks…">
+  </div>
+
+  <div class="date-filters" id="date-filters"></div>
+
+  <!-- Feed -->
+  <main id="feed">
+    <!-- cards inserted here -->
+  </main>
+
+  <!-- Floating Add button -->
+  <button class="fab" id="fab" aria-label="Add task">
+    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+
+  <!-- Bottom nav -->
+  <nav class="bottom">
+    <button class="nav-btn active" data-tab="all">
+      <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      All
+    </button>
+    <button class="nav-btn" data-tab="done">
+      <svg viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></svg>
+      Done
+    </button>
+    <button class="nav-btn" data-tab="dates">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Dates
+    </button>
+  </nav>
+
+  <!-- Sheets -->
+  <div class="sheet-backdrop" id="backdrop"></div>
+
+  <!-- Add task sheet -->
+  <div class="sheet" id="add-sheet">
+    <div class="grabber"></div>
+    <h2>New task</h2>
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="task-title" placeholder="What needs doing?" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Priority</label>
+      <div class="priority-picker">
+        <button class="priority-pick selected p0" data-p="P0">
+          <div class="swatch p0"></div>
+          <div class="pname">P0</div>
+          <div class="plabel">Top</div>
+        </button>
+        <button class="priority-pick p1" data-p="P1">
+          <div class="swatch p1"></div>
+          <div class="pname">P1</div>
+          <div class="plabel">High</div>
+        </button>
+        <button class="priority-pick p2" data-p="P2">
+          <div class="swatch p2"></div>
+          <div class="pname">P2</div>
+          <div class="plabel">Neutral</div>
+        </button>
+        <button class="priority-pick p3" data-p="P3">
+          <div class="swatch p3"></div>
+          <div class="pname">P3</div>
+          <div class="plabel">Chill</div>
+        </button>
+      </div>
+    </div>
+    <button class="save-btn" id="save-task">Add task</button>
+  </div>
+
+  <!-- Settings sheet -->
+  <div class="sheet" id="settings-sheet">
+    <div class="grabber"></div>
+    <h2>Settings</h2>
+
+    <div class="field">
+      <label>Theme</label>
+      <div class="theme-picker">
+        <button class="theme-opt" data-theme-pick="light">
+          <span class="theme-swatch light"></span>
+          <span>Light</span>
+        </button>
+        <button class="theme-opt" data-theme-pick="dark">
+          <span class="theme-swatch dark"></span>
+          <span>Dark</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <label>Color set</label>
+        <button class="add-set-btn" id="open-custom-set" aria-label="Create custom set">
+          <span class="add-set-label">Custom color set</span>
+          <span class="add-set-plus">
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          </span>
+        </button>
+      </div>
+      <div class="colorset-list" id="colorset-list"></div>
+    </div>
+
+    <div class="settings-row">
+      <span>About</span>
+      <span class="muted">v0.1</span>
+    </div>
+    <div class="settings-row" id="clear-data" style="cursor:pointer;">
+      <span style="color: var(--p0);">Clear all tasks</span>
+    </div>
+  </div>
+
+  <!-- Custom color set creator -->
+  <div class="sheet" id="custom-set-sheet">
+    <div class="grabber"></div>
+    <h2 id="custom-set-title">New color set</h2>
+
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="custom-set-name" placeholder="e.g. My Sunset" autocomplete="off" maxlength="20">
+    </div>
+
+    <div id="custom-priority-rows"></div>
+
+    <div class="custom-set-actions">
+      <button class="custom-cancel" id="custom-set-cancel">Cancel</button>
+      <button class="custom-delete" id="custom-set-delete" style="display:none;">Delete</button>
+      <button class="save-btn" id="custom-set-save">Save</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  // ---------- State ----------
+  const STORAGE_KEY = 'tasks.v1';
+  const COLORS_KEY = 'tasks.colors.v1';
+  const THEME_KEY = 'tasks.theme.v1';
+  const CUSTOM_SETS_KEY = 'tasks.customsets.v1';
+  const PRIORITY_LABEL = { P0: 'Top', P1: 'High', P2: 'Neutral', P3: 'Chill' };
+
+  // Curated palette for the custom set creator. Grouped roughly by hue.
+  const SWATCH_PALETTE = [
+    // Reds / pinks
+    '#69362C','#95401C','#B91C1C','#D7727C','#BB8B7B','#582957','#66023C','#5D3954',
+    // Oranges / clays
+    '#DE6D20','#AD764B','#EA580C','#C9A479','#BD9965','#BDA06A','#A38A4F','#5B4636',
+    // Yellows / golds
+    '#CFB53B','#CAD183','#C2B280','#FFFFF0','#F7E7C9','#DED6C8','#D8CAB7','#E1D9EF',
+    // Greens
+    '#4A644D','#114542','#365314','#706F5B','#A8B6AF','#A9B69C','#5A716C',
+    // Blues / purples
+    '#1F2D4C','#1F3850','#47505E','#A9B5C6','#A8B8CC',
+    // Greys
+    '#383431','#515151','#706F5B','#DCDCDC','#E5E5E5'
+  ];
+
+  const DEFAULT_COLORS = {
+    P0: '#DE6D20', // orange
+    P1: '#4A644D', // swamp green
+    P2: '#515151', // dark grey — neutral
+    P3: '#DCDCDC'  // light grey — chill
+  };
+  // Curated theme sets — user picks one and all 4 priorities update
+  const COLOR_SETS = [
+    {
+      id: 'earthy',
+      name: 'Earthy',
+      colors: { P0: '#DE6D20', P1: '#4A644D', P2: '#515151', P3: '#DCDCDC' }
+    },
+    {
+      id: 'rosewood',
+      name: 'Rosewood',
+      colors: { P0: '#3F2933', P1: '#D7727C', P2: '#BDA06A', P3: '#D8CAB7' }
+    },
+    {
+      id: 'atlas',
+      name: 'Atlas',
+      colors: { P0: '#1F2D4C', P1: '#5B4636', P2: '#A38A4F', P3: '#A9B5C6' }
+    },
+    {
+      id: 'clay',
+      name: 'Clay',
+      colors: { P0: '#69362C', P1: '#AD764B', P2: '#706F5B', P3: '#DED6C8' }
+    },
+    {
+      id: 'forest',
+      name: 'Forest',
+      colors: { P0: '#114542', P1: '#C9A479', P2: '#A8B6AF', P3: '#DED6C8' }
+    },
+    {
+      id: 'twilight',
+      name: 'Twilight',
+      colors: { P0: '#582957', P1: '#1F3850', P2: '#A8B8CC', P3: '#E1D9EF' }
+    },
+    {
+      id: 'caramel',
+      name: 'Caramel',
+      colors: { P0: '#5D4037', P1: '#C2B280', P2: '#F7E7C9', P3: '#FFFFF0' }
+    },
+    {
+      id: 'royal',
+      name: 'Royal',
+      colors: { P0: '#66023C', P1: '#5D3954', P2: '#CFB53B', P3: '#CAD183' }
+    },
+    {
+      id: 'hearth',
+      name: 'Hearth',
+      colors: { P0: '#383431', P1: '#95401C', P2: '#BD9965', P3: '#DED6C8' }
+    },
+    {
+      id: 'fog',
+      name: 'Fog',
+      colors: { P0: '#47505E', P1: '#5A716C', P2: '#C9A479', P3: '#A8B6AF' }
+    },
+    {
+      id: 'sakura',
+      name: 'Sakura',
+      colors: { P0: '#582957', P1: '#B69088', P2: '#A9B69C', P3: '#E1D9EF' }
+    },
+    {
+      id: 'adobe',
+      name: 'Adobe',
+      colors: { P0: '#69362C', P1: '#AD764B', P2: '#706F5B', P3: '#BB8B7B' }
+    }
+  ];
+
+  let stored = load();
+  let tasks = (Array.isArray(stored) && stored.length > 0) ? stored : seed();
+  let colors = loadColors();
+  let theme = localStorage.getItem(THEME_KEY) || 'light';
+  let customSets = loadCustomSets();
+  let activeTab = 'all';
+  let activePriority = 'P0';
+  let searchTerm = '';
+  let dateFilter = 'all';
+  let showCompletedInDates = false;
+  const stackIndex = {};
+
+  applyTheme();
+  applyColors();
+
+  function loadCustomSets() {
+    try {
+      const v = JSON.parse(localStorage.getItem(CUSTOM_SETS_KEY));
+      return Array.isArray(v) ? v : [];
+    } catch { return []; }
+  }
+  function saveCustomSets() {
+    localStorage.setItem(CUSTOM_SETS_KEY, JSON.stringify(customSets));
+  }
+  function allSets() {
+    // User-created custom sets first, then built-ins
+    return [...customSets.map(s => ({ ...s, custom: true })), ...COLOR_SETS];
+  }
+
+  function seed() {
+    const now = Date.now();
+    const day = 1000*60*60*24;
+    return [
+      // Today
+      { id: rid(), title: "Reply to Sarah's email about Q3 roadmap", priority: 'P0', done: false, createdAt: now - 1000*60*30 },
+      { id: rid(), title: "Pay credit card bill",                   priority: 'P0', done: false, createdAt: now - 1000*60*90 },
+      { id: rid(), title: "Review pull request #428",                priority: 'P1', done: false, createdAt: now - 1000*60*60*3 },
+      // Yesterday
+      { id: rid(), title: "Book dentist appointment",                priority: 'P1', done: false, createdAt: now - day - 1000*60*60*2 },
+      { id: rid(), title: "Pick up dry cleaning",                    priority: 'P2', done: true,  createdAt: now - day - 1000*60*60*5 },
+      // 3 days ago
+      { id: rid(), title: "Plan weekend trip",                       priority: 'P3', done: true,  createdAt: now - day*3 },
+      { id: rid(), title: "Read chapter 3 of design book",           priority: 'P3', done: false, createdAt: now - day*3 - 1000*60*60*4 },
+      { id: rid(), title: "Order new running shoes",                 priority: 'P2', done: false, createdAt: now - day*3 - 1000*60*60*6 },
+      // 5 days ago
+      { id: rid(), title: "Submit expense report",                   priority: 'P1', done: false, createdAt: now - day*5 }
+    ];
+  }
+  function rid() { return Math.random().toString(36).slice(2, 10); }
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
+  function load() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; }
+  }
+
+  // ---------- Colors ----------
+  function loadColors() {
+    try {
+      const c = JSON.parse(localStorage.getItem(COLORS_KEY));
+      if (c && typeof c === 'object') {
+        return { ...DEFAULT_COLORS, ...c };
+      }
+    } catch {}
+    return { ...DEFAULT_COLORS };
+  }
+  function saveColors() {
+    localStorage.setItem(COLORS_KEY, JSON.stringify(colors));
+  }
+  // Build a soft tint of a color for backgrounds (mixes with white)
+  function softTint(hex) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substring(0,2), 16);
+    const g = parseInt(h.substring(2,4), 16);
+    const b = parseInt(h.substring(4,6), 16);
+    const mix = (c) => Math.round(c + (255 - c) * 0.85);
+    return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+  }
+  // Decide if text on this color should be dark or light
+  function isLightColor(hex) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substring(0,2), 16);
+    const g = parseInt(h.substring(2,4), 16);
+    const b = parseInt(h.substring(4,6), 16);
+    // Perceived brightness (YIQ formula)
+    return (r*299 + g*587 + b*114) / 1000 > 175;
+  }
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+  function isLightColor(hex) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substring(0,2), 16);
+    const g = parseInt(h.substring(2,4), 16);
+    const b = parseInt(h.substring(4,6), 16);
+    return (r*299 + g*587 + b*114) / 1000 > 175;
+  }
+  function applyColors() {
+    const root = document.documentElement;
+    ['P0','P1','P2','P3'].forEach(p => {
+      const key = p.toLowerCase();
+      const isLight = isLightColor(colors[p]);
+      root.style.setProperty(`--${key}`, colors[p]);
+      // Pick text color that contrasts with this priority color
+      root.style.setProperty(`--${key}-on`, isLight ? '#1a1a1a' : '#ffffff');
+      root.style.setProperty(`--${key}-on-soft`, isLight ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.85)');
+      root.style.setProperty(`--${key}-pill-border`, isLight ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.85)');
+    });
+  }
+  function isValidHex(s) {
+    return /^#?[0-9a-fA-F]{6}$/.test(s);
+  }
+  function normalizeHex(s) {
+    s = s.trim();
+    if (!s.startsWith('#')) s = '#' + s;
+    return s.toUpperCase();
+  }
+
+  // ---------- Date formatting ----------
+  function relativeDate(ts) {
+    const d = new Date(ts);
+    const month = d.toLocaleDateString(undefined, { month: 'short' });
+    const day = d.getDate();
+    const yy = String(d.getFullYear()).slice(-2);
+    const weekday = d.toLocaleDateString(undefined, { weekday: 'short' }) + '.';
+    return `${weekday} ${month} ${day}, ${yy}`;
+  }
+
+  // ---------- Date filtering ----------
+  function startOfDay(d) {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x.getTime();
+  }
+  function startOfWeek(d) {
+    // Week starts Monday
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    const day = x.getDay(); // 0 Sun .. 6 Sat
+    const diff = (day === 0 ? 6 : day - 1);
+    x.setDate(x.getDate() - diff);
+    return x.getTime();
+  }
+  function matchesDateFilter(ts) {
+    if (dateFilter === 'all') return true;
+    const today = startOfDay(Date.now());
+    const day = 24 * 60 * 60 * 1000;
+    const taskDay = startOfDay(ts);
+    if (dateFilter === 'today')     return taskDay === today;
+    if (dateFilter === 'yesterday') return taskDay === today - day;
+    if (dateFilter === 'week') {
+      const weekStart = startOfWeek(Date.now());
+      return ts >= weekStart;
+    }
+    if (dateFilter === 'lastweek') {
+      const thisWeekStart = startOfWeek(Date.now());
+      const lastWeekStart = thisWeekStart - 7 * day;
+      return ts >= lastWeekStart && ts < thisWeekStart;
+    }
+    return true;
+  }
+
+  function renderDateFilters() {
+    const container = document.getElementById('date-filters');
+    if (!container) return;
+    if (activeTab !== 'all') {
+      container.style.display = 'none';
+      return;
+    }
+    container.style.display = 'flex';
+    const pills = [
+      { id: 'all',       label: 'All' },
+      { id: 'today',     label: 'Today' },
+      { id: 'yesterday', label: 'Yesterday' },
+      { id: 'week',      label: 'This week' },
+      { id: 'lastweek',  label: 'Last week' }
+    ];
+    container.innerHTML = '';
+    pills.forEach(p => {
+      const b = document.createElement('button');
+      b.className = 'date-pill' + (dateFilter === p.id ? ' active' : '');
+      b.textContent = p.label;
+      b.addEventListener('click', () => {
+        dateFilter = p.id;
+        renderDateFilters();
+        render();
+      });
+      container.appendChild(b);
+    });
+    // "More →" jumps to Dates tab
+    const more = document.createElement('button');
+    more.className = 'date-pill more';
+    more.textContent = 'More →';
+    more.addEventListener('click', () => {
+      // Switch to dates tab
+      activeTab = 'dates';
+      document.querySelectorAll('.nav-btn').forEach(x => {
+        x.classList.toggle('active', x.getAttribute('data-tab') === 'dates');
+      });
+      renderDateFilters();
+      render();
+    });
+    container.appendChild(more);
+  }
+
+  // ---------- Render ----------
+  const feed = document.getElementById('feed');
+
+  function visibleTasks() {
+    let list = tasks.slice();
+    // newest first
+    list.sort((a, b) => b.createdAt - a.createdAt);
+    if (activeTab === 'done') list = list.filter(t => t.done);
+    else                      list = list.filter(t => !t.done);
+    // Date filter only applies on the All tab
+    if (activeTab === 'all') {
+      list = list.filter(t => matchesDateFilter(t.createdAt));
+    }
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      list = list.filter(t => t.title.toLowerCase().includes(q));
+    }
+    return list;
+  }
+
+  function render() {
+    if (activeTab === 'dates') {
+      renderDates();
+      return;
+    }
+    const list = visibleTasks();
+    feed.innerHTML = '';
+    if (list.length === 0) {
+      feed.innerHTML = `
+        <div class="empty">
+          <div class="emo">${activeTab === 'done' ? '🌱' : '☕'}</div>
+          <div class="h">${activeTab === 'done' ? 'Nothing finished yet' : 'No tasks here'}</div>
+          <div class="s">${activeTab === 'done' ? "Check off a task and it'll show up here." : 'Tap + to add your first one.'}</div>
+        </div>`;
+      return;
+    }
+    const heading = document.createElement('div');
+    heading.className = 'feed-heading';
+    heading.textContent = activeTab === 'done'
+      ? `${list.length} completed`
+      : `${list.length} active`;
+    feed.appendChild(heading);
+
+    list.forEach(t => feed.appendChild(cardEl(t)));
+  }
+
+  // ---------- Dates view ----------
+
+  function dayKey(ts) {
+    const d = new Date(ts);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function dayLabel(key) {
+    const [y, m, d] = key.split('-').map(Number);
+    const date = new Date(y, m-1, d);
+    return date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  }
+  function dayRelative(key) {
+    const [y, m, d] = key.split('-').map(Number);
+    const date = new Date(y, m-1, d);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const diffDays = Math.round((today - date) / (1000*60*60*24));
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays === -1) return 'Tomorrow';
+    if (diffDays > 0 && diffDays < 7) return `${diffDays} days ago`;
+    return '';
+  }
+
+  function renderDates() {
+    feed.innerHTML = '';
+
+    // Toggle row
+    const toggleRow = document.createElement('div');
+    toggleRow.className = 'toggle-row';
+    toggleRow.innerHTML = `
+      <span>Show completed</span>
+      <div class="toggle ${showCompletedInDates ? 'on' : ''}" id="completed-toggle"></div>
+    `;
+    feed.appendChild(toggleRow);
+    toggleRow.querySelector('#completed-toggle').addEventListener('click', () => {
+      showCompletedInDates = !showCompletedInDates;
+      render();
+    });
+
+    // Filter
+    let list = tasks.slice();
+    if (!showCompletedInDates) list = list.filter(t => !t.done);
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      list = list.filter(t => t.title.toLowerCase().includes(q));
+    }
+
+    if (list.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.innerHTML = `
+        <div class="emo">📅</div>
+        <div class="h">No tasks to group</div>
+        <div class="s">Add some tasks and they'll appear here by date.</div>
+      `;
+      feed.appendChild(empty);
+      return;
+    }
+
+    // Group by day
+    const groups = {};
+    list.forEach(t => {
+      const key = dayKey(t.createdAt);
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(t);
+    });
+    // Within a day, sort by priority order then newest first
+    const pOrder = { P0: 0, P1: 1, P2: 2, P3: 3 };
+    Object.values(groups).forEach(g => g.sort((a, b) => {
+      if (pOrder[a.priority] !== pOrder[b.priority]) return pOrder[a.priority] - pOrder[b.priority];
+      return b.createdAt - a.createdAt;
+    }));
+
+    // Newest day first
+    const dayKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+    dayKeys.forEach(key => {
+      const dayTasks = groups[key];
+      feed.appendChild(dateSectionEl(key, dayTasks));
+    });
+  }
+
+  function dateSectionEl(key, dayTasks) {
+    const section = document.createElement('div');
+    section.className = 'date-section';
+
+    const rel = dayRelative(key);
+    section.innerHTML = `
+      <div class="date-header">
+        <div class="day">${dayLabel(key)}${rel ? `<span class="relative">${rel}</span>` : ''}</div>
+        <div class="count">${dayTasks.length} task${dayTasks.length === 1 ? '' : 's'}</div>
+      </div>
+      <div class="stack" data-key="${key}"></div>
+      <div class="stack-indicators" data-key="${key}"></div>
+    `;
+
+    const stack = section.querySelector('.stack');
+    const indicators = section.querySelector('.stack-indicators');
+
+    // Initialize index for this stack if not set
+    if (stackIndex[key] === undefined || stackIndex[key] >= dayTasks.length) {
+      stackIndex[key] = 0;
+    }
+
+    renderStack(stack, indicators, key, dayTasks);
+
+    return section;
+  }
+
+  function renderStack(stack, indicators, key, dayTasks) {
+    stack.innerHTML = '';
+    indicators.innerHTML = '';
+
+    const current = stackIndex[key];
+
+    // Render up to 3 cards: current and 2 behind it for depth
+    const visibleCount = Math.min(3, dayTasks.length);
+    for (let i = visibleCount - 1; i >= 0; i--) {
+      const taskIdx = (current + i) % dayTasks.length;
+      const task = dayTasks[taskIdx];
+      const card = stackCardEl(task);
+      const depth = i;
+      const scale = 1 - depth * 0.05;
+      const yOff = depth * 14;
+      card.style.transform = `translateY(${yOff}px) scale(${scale})`;
+      card.style.zIndex = 10 - depth;
+      card.style.opacity = '1';
+      stack.appendChild(card);
+      if (i === 0) attachStackGestures(card, stack, indicators, key, dayTasks);
+    }
+
+    // Indicators (only show if more than 1)
+    if (dayTasks.length > 1) {
+      dayTasks.forEach((_, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'stack-dot' + (i === current ? ' active' : '');
+        indicators.appendChild(dot);
+      });
+    }
+  }
+
+  function stackCardEl(t) {
+    const pClass = t.priority.toLowerCase();
+    const card = document.createElement('div');
+    card.className = 'stack-card ' + pClass + (t.done ? ' completed' : '');
+    card.innerHTML = `
+      <div class="ticket ${pClass}">
+        <span class="pill">${t.priority} · ${PRIORITY_LABEL[t.priority]}</span>
+        <span class="date">${relativeDate(t.createdAt)}</span>
+      </div>
+      <div class="body">
+        <div class="title">${escapeHtml(t.title)}</div>
+      </div>
+      <div class="perforation"><div class="dashes"></div></div>
+      <div class="footer">
+        <div class="checkbox ${t.done ? 'checked '+pClass : ''}" data-id="${t.id}">
+          <svg viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></svg>
+        </div>
+        <div class="check-label">${t.done ? 'Completed' : 'Mark as done'}</div>
+        <button class="delete-btn" data-del="${t.id}" aria-label="Delete">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </div>
+    `;
+    return card;
+  }
+
+  function attachStackGestures(card, stack, indicators, key, dayTasks) {
+    let startX = 0, startY = 0, dx = 0, dy = 0;
+    let dragging = false;
+    let isHorizontal = null; // determined after small move
+
+    card.addEventListener('pointerdown', (e) => {
+      // Don't start drag if user tapped the checkbox or delete button
+      if (e.target.closest('.checkbox') || e.target.closest('.delete-btn')) return;
+      dragging = true;
+      isHorizontal = null;
+      startX = e.clientX;
+      startY = e.clientY;
+      card.classList.add('dragging');
+      card.setPointerCapture(e.pointerId);
+    });
+
+    card.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      dx = e.clientX - startX;
+      dy = e.clientY - startY;
+
+      // Lock direction once user moves a bit
+      if (isHorizontal === null) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        isHorizontal = Math.abs(dx) > Math.abs(dy);
+        if (!isHorizontal) {
+          // It's a vertical drag — let the page scroll, abort our drag
+          dragging = false;
+          card.classList.remove('dragging');
+          return;
+        }
+      }
+      if (!isHorizontal) return;
+
+      e.preventDefault();
+      const rotation = dx * 0.04;
+      card.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
+    });
+
+    function endDrag() {
+      if (!dragging) return;
+      dragging = false;
+      card.classList.remove('dragging');
+      if (!isHorizontal) return;
+
+      const threshold = 80;
+      if (dx > threshold) {
+        // swipe right → previous card
+        flyAndAdvance(card, 'right', stack, indicators, key, dayTasks);
+      } else if (dx < -threshold) {
+        // swipe left → next card
+        flyAndAdvance(card, 'left', stack, indicators, key, dayTasks);
+      } else {
+        card.style.transform = '';
+      }
+      dx = 0; dy = 0;
+    }
+    card.addEventListener('pointerup', endDrag);
+    card.addEventListener('pointercancel', endDrag);
+  }
+
+  function flyAndAdvance(card, dir, stack, indicators, key, dayTasks) {
+    const tx = dir === 'left' ? -500 : 500;
+    const rot = dir === 'left' ? -25 : 25;
+    card.style.transition = 'transform 0.3s ease-out, opacity 0.3s';
+    card.style.transform = `translateX(${tx}px) rotate(${rot}deg)`;
+    card.style.opacity = '0';
+    setTimeout(() => {
+      const len = dayTasks.length;
+      if (dir === 'left') stackIndex[key] = (stackIndex[key] + 1) % len;
+      else                stackIndex[key] = (stackIndex[key] - 1 + len) % len;
+      renderStack(stack, indicators, key, dayTasks);
+    }, 280);
+  }
+
+  function cardEl(t) {
+    const pClass = t.priority.toLowerCase();
+    const card = document.createElement('article');
+    card.className = 'card ' + pClass + (t.done ? ' completed' : '');
+    card.innerHTML = `
+      <div class="ticket ${pClass}">
+        <span class="pill">${t.priority} · ${PRIORITY_LABEL[t.priority]}</span>
+        <span class="date">${relativeDate(t.createdAt)}</span>
+      </div>
+      <div class="body">
+        <div class="title">${escapeHtml(t.title)}</div>
+      </div>
+      <div class="perforation"><div class="dashes"></div></div>
+      <div class="footer">
+        <div class="checkbox ${t.done ? 'checked '+pClass : ''}" data-id="${t.id}">
+          <svg viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></svg>
+        </div>
+        <div class="check-label">${t.done ? 'Completed' : 'Mark as done'}</div>
+        <button class="delete-btn" data-del="${t.id}" aria-label="Delete">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </div>
+    `;
+    return card;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- Interactions ----------
+
+  feed.addEventListener('click', (e) => {
+    const cb = e.target.closest('.checkbox');
+    if (cb) {
+      const id = cb.getAttribute('data-id');
+      const t = tasks.find(x => x.id === id);
+      if (t) {
+        t.done = !t.done;
+        save(); render();
+      }
+      return;
+    }
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      const id = del.getAttribute('data-del');
+      tasks = tasks.filter(t => t.id !== id);
+      save(); render();
+    }
+  });
+
+  // Bottom nav
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      activeTab = b.getAttribute('data-tab');
+      renderDateFilters();
+      render();
+    });
+  });
+
+  // Search
+  const searchWrap = document.getElementById('search-wrap');
+  const searchInput = document.getElementById('search-input');
+  document.getElementById('search-btn').addEventListener('click', () => {
+    searchWrap.classList.toggle('open');
+    if (searchWrap.classList.contains('open')) {
+      setTimeout(() => searchInput.focus(), 200);
+    } else {
+      searchInput.value = '';
+      searchTerm = '';
+      render();
+    }
+  });
+  searchInput.addEventListener('input', (e) => {
+    searchTerm = e.target.value;
+    render();
+  });
+
+  // Sheets
+  const backdrop = document.getElementById('backdrop');
+  const addSheet = document.getElementById('add-sheet');
+  const settingsSheet = document.getElementById('settings-sheet');
+  const titleInput = document.getElementById('task-title');
+
+  function openSheet(sheet) {
+    sheet.classList.add('open');
+    backdrop.classList.add('open');
+  }
+  function closeSheets() {
+    addSheet.classList.remove('open');
+    settingsSheet.classList.remove('open');
+    const customSheet = document.getElementById('custom-set-sheet');
+    if (customSheet) customSheet.classList.remove('open');
+    backdrop.classList.remove('open');
+  }
+  backdrop.addEventListener('click', closeSheets);
+
+  document.getElementById('fab').addEventListener('click', () => {
+    titleInput.value = '';
+    activePriority = 'P0';
+    document.querySelectorAll('.priority-pick').forEach(p => {
+      p.classList.toggle('selected', p.getAttribute('data-p') === 'P0');
+    });
+    openSheet(addSheet);
+    setTimeout(() => titleInput.focus(), 250);
+  });
+
+  document.getElementById('settings-btn').addEventListener('click', () => {
+    renderColorPicker();
+    renderThemePicker();
+    openSheet(settingsSheet);
+  });
+
+  // Custom set creator wiring
+  document.getElementById('open-custom-set').addEventListener('click', () => {
+    openCustomSetSheet(null);
+  });
+  document.getElementById('custom-set-cancel').addEventListener('click', closeSheets);
+  document.getElementById('custom-set-save').addEventListener('click', saveCustomSet);
+  document.getElementById('custom-set-delete').addEventListener('click', deleteCustomSet);
+
+  function renderThemePicker() {
+    document.querySelectorAll('.theme-opt').forEach(b => {
+      const t = b.getAttribute('data-theme-pick');
+      b.classList.toggle('selected', t === theme);
+      b.onclick = () => {
+        theme = t;
+        localStorage.setItem(THEME_KEY, theme);
+        applyTheme();
+        renderThemePicker();
+      };
+    });
+  }
+
+  function renderColorPicker() {
+    const container = document.getElementById('colorset-list');
+    container.innerHTML = '';
+
+    const sets = allSets();
+    // Determine which set (if any) is currently active
+    const currentSetId = sets.find(s =>
+      ['P0','P1','P2','P3'].every(p => s.colors[p].toUpperCase() === colors[p].toUpperCase())
+    )?.id;
+
+    sets.forEach(set => {
+      const card = document.createElement('div');
+      card.className = 'colorset-card' + (set.id === currentSetId ? ' selected' : '');
+      // The card itself isn't a button anymore (so the inner × can stop propagation cleanly)
+      card.setAttribute('role', 'button');
+      card.tabIndex = 0;
+      card.innerHTML = `
+        <div class="colorset-swatches">
+          <span style="background:${set.colors.P0}"></span>
+          <span style="background:${set.colors.P1}"></span>
+          <span style="background:${set.colors.P2}"></span>
+          <span style="background:${set.colors.P3}"></span>
+        </div>
+        <div class="colorset-name">
+          ${escapeHtml(set.name)}${set.custom ? '<span class="custom-badge">Custom</span>' : ''}
+          <span class="meta">P0 → P3</span>
+        </div>
+        ${set.custom ? `
+          <button class="colorset-edit" data-set-id="${set.id}" aria-label="Edit set">
+            <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          </button>
+          <button class="colorset-delete" data-set-id="${set.id}" aria-label="Delete set">
+            <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        ` : ''}
+        <div class="colorset-check">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      `;
+      // Selecting the set
+      card.addEventListener('click', (e) => {
+        // Clicks on the inline edit/delete buttons shouldn't select the set
+        if (e.target.closest('.colorset-delete') || e.target.closest('.colorset-edit')) return;
+        colors = { ...set.colors };
+        saveColors();
+        applyColors();
+        renderColorPicker();
+        render();
+      });
+
+      // Inline edit button on custom sets
+      const editBtn = card.querySelector('.colorset-edit');
+      if (editBtn) {
+        editBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openCustomSetSheet(set.id);
+        });
+      }
+
+      // Inline delete button on custom sets
+      const delBtn = card.querySelector('.colorset-delete');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!confirm(`Delete "${set.name}"?`)) return;
+          customSets = customSets.filter(s => s.id !== set.id);
+          saveCustomSets();
+          renderColorPicker();
+        });
+      }
+
+      container.appendChild(card);
+    });
+  }
+
+  function applyColorChange(priority, hex) {
+    colors[priority] = hex;
+    saveColors();
+    applyColors();
+    // Update the swatch + selected chip + (avoid full rebuild during typing)
+    const section = document.getElementById('pcolor-section');
+    if (section) {
+      const swatch = section.querySelector(`.pcolor-row .pcolor-head .pcolor-swatch`);
+      // Find the right swatch — match by row position
+      const rows = section.querySelectorAll('.pcolor-row');
+      const idx = ['P0','P1','P2','P3'].indexOf(priority);
+      if (rows[idx]) {
+        rows[idx].querySelector('.pcolor-swatch').style.background = hex;
+        rows[idx].querySelectorAll('.pcolor-chip').forEach(c => {
+          c.classList.toggle('selected', c.getAttribute('data-color').toUpperCase() === hex.toUpperCase());
+        });
+      }
+    }
+    // Re-render the feed so existing cards pick up the new color
+    render();
+  }
+
+  // ---------- Custom set creator ----------
+  let editingSetId = null;     // null = new, else editing existing custom set id
+  let draftColors = { P0: '', P1: '', P2: '', P3: '' };
+
+  function openCustomSetSheet(setId) {
+    editingSetId = setId || null;
+    const sheet = document.getElementById('custom-set-sheet');
+    const titleEl = document.getElementById('custom-set-title');
+    const nameInput = document.getElementById('custom-set-name');
+    const deleteBtn = document.getElementById('custom-set-delete');
+
+    if (editingSetId) {
+      const set = customSets.find(s => s.id === editingSetId);
+      if (!set) { editingSetId = null; }
+      else {
+        draftColors = { ...set.colors };
+        nameInput.value = set.name;
+        titleEl.textContent = 'Edit color set';
+        deleteBtn.style.display = '';
+      }
+    }
+    if (!editingSetId) {
+      // Seed with current active colors as a starting point
+      draftColors = { ...colors };
+      nameInput.value = '';
+      titleEl.textContent = 'New color set';
+      deleteBtn.style.display = 'none';
+    }
+    renderCustomRows();
+    openSheet(sheet);
+  }
+
+  function renderCustomRows() {
+    const container = document.getElementById('custom-priority-rows');
+    container.innerHTML = '';
+    ['P0','P1','P2','P3'].forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'custom-priority-row';
+      row.innerHTML = `
+        <div class="row-head">
+          <div class="row-name">${p}<span class="label">${PRIORITY_LABEL[p]}</span></div>
+        </div>
+        <div class="swatch-strip" data-p="${p}">
+          ${SWATCH_PALETTE.map(c => `
+            <button class="swatch-pick${draftColors[p] && c.toUpperCase() === draftColors[p].toUpperCase() ? ' selected' : ''}"
+                    data-color="${c}" style="background:${c}"></button>
+          `).join('')}
+        </div>
+      `;
+      container.appendChild(row);
+
+      row.querySelectorAll('.swatch-pick').forEach(chip => {
+        chip.addEventListener('click', () => {
+          draftColors[p] = chip.getAttribute('data-color');
+          // Update selected ring across this row's strip
+          row.querySelectorAll('.swatch-pick').forEach(c => {
+            c.classList.toggle('selected',
+              c.getAttribute('data-color').toUpperCase() === draftColors[p].toUpperCase());
+          });
+        });
+      });
+
+      // Enable mouse drag-to-scroll + wheel-to-horizontal on this strip
+      enableHorizontalScroll(row.querySelector('.swatch-strip'));
+    });
+  }
+
+  // Make a horizontally-overflowing element scrollable by mouse drag and
+  // by mouse wheel / trackpad two-finger swipe (vertical → horizontal).
+  function enableHorizontalScroll(el) {
+    if (!el) return;
+    let isDown = false, startX = 0, scrollStart = 0, moved = 0;
+    el.addEventListener('mousedown', (e) => {
+      isDown = true; moved = 0;
+      startX = e.pageX - el.offsetLeft;
+      scrollStart = el.scrollLeft;
+      el.classList.add('dragging');
+    });
+    el.addEventListener('mouseleave', () => { isDown = false; el.classList.remove('dragging'); });
+    el.addEventListener('mouseup',    () => { isDown = false; el.classList.remove('dragging'); });
+    el.addEventListener('mousemove', (e) => {
+      if (!isDown) return;
+      const x = e.pageX - el.offsetLeft;
+      const dx = x - startX;
+      moved = Math.abs(dx);
+      el.scrollLeft = scrollStart - dx;
+    });
+    el.addEventListener('click', (e) => {
+      if (moved > 5) { e.stopPropagation(); e.preventDefault(); }
+    }, true);
+    // Wheel: convert vertical scroll into horizontal so trackpads work
+    el.addEventListener('wheel', (e) => {
+      const dx = e.deltaX;
+      const dy = e.deltaY;
+      // Only intercept if vertical motion is the dominant axis (trackpad swipe up/down)
+      if (Math.abs(dy) > Math.abs(dx)) {
+        // Don't preventDefault if the strip can't scroll further — let the page handle it
+        const max = el.scrollWidth - el.clientWidth;
+        if ((dy > 0 && el.scrollLeft < max) || (dy < 0 && el.scrollLeft > 0)) {
+          e.preventDefault();
+          el.scrollLeft += dy;
+        }
+      }
+    }, { passive: false });
+  }
+
+  function generateSetName() {
+    const adjectives = ['Sunset','Aurora','Harvest','Ocean','Storm','Velvet','Coral','Mist','Ember','Tundra','Meadow','Dune'];
+    const used = new Set(allSets().map(s => s.name.toLowerCase()));
+    for (const adj of adjectives) {
+      if (!used.has(adj.toLowerCase())) return adj;
+    }
+    return 'Custom ' + (customSets.length + 1);
+  }
+
+  function saveCustomSet() {
+    // Validate colors
+    if (!draftColors.P0 || !draftColors.P1 || !draftColors.P2 || !draftColors.P3) {
+      alert('Pick a color for all four priorities (P0–P3).');
+      return;
+    }
+    let name = document.getElementById('custom-set-name').value.trim();
+    if (!name) name = generateSetName();
+
+    if (editingSetId) {
+      const idx = customSets.findIndex(s => s.id === editingSetId);
+      if (idx >= 0) {
+        customSets[idx] = { id: editingSetId, name, colors: { ...draftColors } };
+      }
+    } else {
+      const id = 'custom-' + Date.now();
+      customSets.push({ id, name, colors: { ...draftColors } });
+      // Auto-apply the newly created set
+      colors = { ...draftColors };
+      saveColors();
+      applyColors();
+    }
+    saveCustomSets();
+    closeSheets();
+    renderColorPicker();
+    render();
+  }
+
+  function deleteCustomSet() {
+    if (!editingSetId) return;
+    if (!confirm('Delete this color set?')) return;
+    customSets = customSets.filter(s => s.id !== editingSetId);
+    saveCustomSets();
+    closeSheets();
+    renderColorPicker();
+  }
+
+  // Priority picker
+  document.querySelectorAll('.priority-pick').forEach(p => {
+    p.addEventListener('click', () => {
+      document.querySelectorAll('.priority-pick').forEach(x => x.classList.remove('selected'));
+      p.classList.add('selected');
+      activePriority = p.getAttribute('data-p');
+    });
+  });
+
+  // Save task
+  function saveTask() {
+    const title = titleInput.value.trim();
+    if (!title) return;
+    tasks.push({
+      id: rid(),
+      title,
+      priority: activePriority,
+      done: false,
+      createdAt: Date.now()
+    });
+    save();
+    closeSheets();
+    activeTab = 'all';
+    document.querySelectorAll('.nav-btn').forEach(x => {
+      x.classList.toggle('active', x.getAttribute('data-tab') === 'all');
+    });
+    render();
+  }
+  document.getElementById('save-task').addEventListener('click', saveTask);
+  titleInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') saveTask();
+  });
+
+  // Clear data (settings)
+  document.getElementById('clear-data').addEventListener('click', () => {
+    if (confirm('Delete all tasks? This cannot be undone.')) {
+      tasks = [];
+      save(); closeSheets(); render();
+    }
+  });
+
+  // Initial render
+  renderDateFilters();
+  render();
+
+  // Mouse drag-to-scroll for date filters (desktop). Mobile already
+  // supports horizontal swipe natively via overflow-x.
+  (function enableDragScroll() {
+    const el = document.getElementById('date-filters');
+    if (!el) return;
+    let isDown = false, startX = 0, scrollStart = 0, moved = 0;
+    el.addEventListener('mousedown', (e) => {
+      isDown = true; moved = 0;
+      startX = e.pageX - el.offsetLeft;
+      scrollStart = el.scrollLeft;
+      el.classList.add('dragging');
+    });
+    el.addEventListener('mouseleave', () => { isDown = false; el.classList.remove('dragging'); });
+    el.addEventListener('mouseup', () => { isDown = false; el.classList.remove('dragging'); });
+    el.addEventListener('mousemove', (e) => {
+      if (!isDown) return;
+      const x = e.pageX - el.offsetLeft;
+      const dx = x - startX;
+      moved = Math.abs(dx);
+      el.scrollLeft = scrollStart - dx;
+    });
+    // Prevent click on a pill if the user actually dragged
+    el.addEventListener('click', (e) => {
+      if (moved > 5) { e.stopPropagation(); e.preventDefault(); }
+    }, true);
+  })();
+})();
+</script>
+</body>
+</html>
