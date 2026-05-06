@@ -4,6 +4,48 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Doneit</title>
+
+<!-- Firebase SDK (modular) — exposes a small surface to window.fb -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+  import {
+    getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot,
+    query, orderBy, writeBatch, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA3M-GhsbNV18D6vgXHG2R-90AGudJf9Ws",
+    authDomain: "doneit-202cb.firebaseapp.com",
+    databaseURL: "https://doneit-202cb-default-rtdb.firebaseio.com",
+    projectId: "doneit-202cb",
+    storageBucket: "doneit-202cb.firebasestorage.app",
+    messagingSenderId: "573009229794",
+    appId: "1:573009229794:web:c35175ed214b7fc9dfebbb"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  // Expose just the methods the main app needs
+  window.fb = {
+    auth, db,
+    signIn: () => signInWithPopup(auth, provider),
+    signOut: () => signOut(auth),
+    onAuthChange: (cb) => onAuthStateChanged(auth, cb),
+    // Firestore helpers
+    collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy,
+    writeBatch, serverTimestamp
+  };
+
+  // Tell the main app Firebase is ready
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
 <style>
   /* ---------- Light theme (default) ---------- */
   :root, [data-theme="light"] {
@@ -69,6 +111,100 @@
     flex-direction: column;
     position: relative;
     background: transparent;
+  }
+
+  /* ---------- Sync bar (above date filters when signed out) ---------- */
+  .sync-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    margin: 12px 16px 4px;
+    border-radius: 14px;
+    background: color-mix(in srgb, #DE6D20 12%, var(--bg));
+    border: 1px solid color-mix(in srgb, #DE6D20 25%, transparent);
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .sync-bar.hidden { display: none; }
+  .sync-bar .sync-msg {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--ink-2);
+    flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .sync-bar .cloud-icon {
+    width: 18px; height: 18px;
+    stroke: #DE6D20; fill: none; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+    flex-shrink: 0;
+  }
+  .sync-bar .signin-btn {
+    background: #DE6D20;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .sync-bar .signin-btn:hover { opacity: 0.9; }
+  .sync-bar .signin-btn:active { transform: scale(0.96); }
+
+  /* ---------- Account card in settings ---------- */
+  .account-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: var(--card-body);
+    border: 1px solid var(--line);
+  }
+  [data-theme="dark"] .account-card { background: var(--bg-2); }
+  .account-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+  .account-text { flex: 1; min-width: 0; }
+  .account-title {
+    font-size: 14px; font-weight: 700; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .account-sub {
+    font-size: 12px; color: var(--ink-2); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  #signin-btn-2 {
+    background: #DE6D20; color: #fff;
+    border: none; border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 12px; font-weight: 700;
+    font-family: inherit;
+    cursor: pointer; flex-shrink: 0;
+    transition: opacity 0.15s;
+  }
+  #signin-btn-2:hover { opacity: 0.9; }
+  .signout-btn {
+    background: transparent;
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 12px; font-weight: 600;
+    font-family: inherit;
+    cursor: pointer; flex-shrink: 0;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .signout-btn:hover {
+    background: rgba(192, 57, 43, 0.08);
+    color: #c0392b;
+    border-color: rgba(192, 57, 43, 0.3);
   }
 
   /* Sticky header — opaque so the wordmark and icons stay readable
@@ -920,6 +1056,15 @@
     <input type="text" id="search-input" placeholder="Search tasks…">
   </div>
 
+  <!-- Sync status strip: shown when signed out, hidden when signed in -->
+  <div class="sync-bar" id="sync-bar">
+    <span class="sync-msg">
+      <svg viewBox="0 0 24 24" class="cloud-icon"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+      Tasks saved on this device only
+    </span>
+    <button class="signin-btn" id="signin-btn">Sign in to sync</button>
+  </div>
+
   <div class="date-filters" id="date-filters"></div>
 
   <!-- Feed -->
@@ -991,6 +1136,26 @@
   <div class="sheet" id="settings-sheet">
     <div class="grabber"></div>
     <h2>Settings</h2>
+
+    <!-- Account section -->
+    <div class="field" id="account-field">
+      <label>Account</label>
+      <div class="account-card" id="account-signed-out">
+        <div class="account-text">
+          <div class="account-title">Not signed in</div>
+          <div class="account-sub">Sign in with Google to sync across devices</div>
+        </div>
+        <button class="signin-btn" id="signin-btn-2">Sign in</button>
+      </div>
+      <div class="account-card" id="account-signed-in" style="display:none;">
+        <img class="account-avatar" id="account-avatar" referrerpolicy="no-referrer" alt="">
+        <div class="account-text">
+          <div class="account-title" id="account-name">—</div>
+          <div class="account-sub" id="account-email">—</div>
+        </div>
+        <button class="signout-btn" id="signout-btn">Sign out</button>
+      </div>
+    </div>
 
     <div class="field">
       <label>Theme</label>
@@ -1193,9 +1358,90 @@
     ];
   }
   function rid() { return Math.random().toString(36).slice(2, 10); }
-  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
+  // ---------- Sync layer (Firestore + localStorage) ----------
+  // Strategy: localStorage is always written so the app works offline.
+  // When signed in, every mutation also writes to Firestore, and a
+  // realtime listener pulls remote changes back.
+  let currentUser = null;
+  let unsubscribeTasks = null;
+  let suppressNextLocalSave = false;  // set true when applying remote snapshot
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    if (currentUser && !suppressNextLocalSave) {
+      pushAllToCloud().catch(err => console.error('Cloud save failed:', err));
+    }
+    suppressNextLocalSave = false;
+  }
   function load() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; }
+  }
+
+  // Snapshot current local tasks to Firestore (one doc per task).
+  // Uses a batched write so all changes commit atomically.
+  async function pushAllToCloud() {
+    if (!currentUser || !window.fb) return;
+    const fb = window.fb;
+    const batch = fb.writeBatch(fb.db);
+    const colRef = fb.collection(fb.db, 'users', currentUser.uid, 'tasks');
+
+    // Track current task IDs so we can delete remote tasks that aren't local anymore
+    const localIds = new Set(tasks.map(t => t.id));
+    // Write each local task (set with merge so partial updates work)
+    tasks.forEach(t => {
+      const ref = fb.doc(colRef, t.id);
+      batch.set(ref, {
+        title: t.title,
+        priority: t.priority,
+        done: !!t.done,
+        createdAt: t.createdAt,
+        updatedAt: Date.now()
+      });
+    });
+    // We rely on individual delete calls (not the batch) for removed tasks —
+    // but since we only call save() after edits, and deletions are also a save,
+    // we explicitly remove cloud docs for any IDs that are no longer in local.
+    // The simplest robust path: nothing — onSnapshot will reconcile reads.
+    // For deletes triggered by the user, we already call deleteFromCloud() directly.
+    await batch.commit();
+  }
+
+  async function deleteFromCloud(id) {
+    if (!currentUser || !window.fb) return;
+    const fb = window.fb;
+    const ref = fb.doc(fb.db, 'users', currentUser.uid, 'tasks', id);
+    try { await fb.deleteDoc(ref); } catch (e) { console.error('Cloud delete failed:', e); }
+  }
+
+  // Subscribe to realtime task changes for the signed-in user.
+  function startCloudListener() {
+    if (!currentUser || !window.fb) return;
+    const fb = window.fb;
+    const colRef = fb.collection(fb.db, 'users', currentUser.uid, 'tasks');
+    const q = fb.query(colRef, fb.orderBy('createdAt', 'desc'));
+    unsubscribeTasks = fb.onSnapshot(q, (snap) => {
+      const cloudTasks = [];
+      snap.forEach(d => {
+        const data = d.data();
+        cloudTasks.push({
+          id: d.id,
+          title: data.title || '',
+          priority: data.priority || 'P2',
+          done: !!data.done,
+          createdAt: data.createdAt || Date.now()
+        });
+      });
+      tasks = cloudTasks;
+      // Mirror to localStorage but DON'T trigger another cloud push
+      suppressNextLocalSave = true;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      render();
+    }, (err) => {
+      console.error('Cloud listener error:', err);
+    });
+  }
+  function stopCloudListener() {
+    if (unsubscribeTasks) { unsubscribeTasks(); unsubscribeTasks = null; }
   }
 
   // ---------- Colors ----------
@@ -1683,6 +1929,7 @@
     if (del) {
       const id = del.getAttribute('data-del');
       tasks = tasks.filter(t => t.id !== id);
+      if (currentUser) deleteFromCloud(id);
       save(); render();
     }
   });
@@ -2057,7 +2304,11 @@
   // Clear data (settings)
   document.getElementById('clear-data').addEventListener('click', () => {
     if (confirm('Delete all tasks? This cannot be undone.')) {
+      const oldIds = tasks.map(t => t.id);
       tasks = [];
+      if (currentUser) {
+        oldIds.forEach(id => deleteFromCloud(id));
+      }
       save(); closeSheets(); render();
     }
   });
@@ -2065,6 +2316,96 @@
   // Initial render
   renderDateFilters();
   render();
+
+  // ---------- Auth wiring ----------
+  function updateAuthUI() {
+    const syncBar = document.getElementById('sync-bar');
+    const signedOutCard = document.getElementById('account-signed-out');
+    const signedInCard = document.getElementById('account-signed-in');
+
+    if (currentUser) {
+      // Hide top sync bar
+      syncBar.classList.add('hidden');
+      // Swap settings account cards
+      signedOutCard.style.display = 'none';
+      signedInCard.style.display = '';
+      document.getElementById('account-name').textContent =
+        currentUser.displayName || currentUser.email || 'Signed in';
+      document.getElementById('account-email').textContent = currentUser.email || '';
+      const avatar = document.getElementById('account-avatar');
+      if (currentUser.photoURL) {
+        avatar.src = currentUser.photoURL;
+        avatar.style.display = '';
+      } else {
+        avatar.style.display = 'none';
+      }
+    } else {
+      syncBar.classList.remove('hidden');
+      signedOutCard.style.display = '';
+      signedInCard.style.display = 'none';
+    }
+  }
+
+  async function handleSignIn() {
+    if (!window.fb) { alert('Sign-in not ready yet, please try again in a moment.'); return; }
+    try {
+      await window.fb.signIn();
+      // onAuthChange will fire next; migration logic runs there
+    } catch (err) {
+      console.error('Sign-in error:', err);
+      if (err && err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        alert('Could not sign in. Please try again.');
+      }
+    }
+  }
+
+  async function handleSignOut() {
+    if (!window.fb) return;
+    try { await window.fb.signOut(); }
+    catch (err) { console.error('Sign-out error:', err); }
+  }
+
+  document.getElementById('signin-btn').addEventListener('click', handleSignIn);
+  document.getElementById('signin-btn-2').addEventListener('click', handleSignIn);
+  document.getElementById('signout-btn').addEventListener('click', handleSignOut);
+
+  function bootAuth() {
+    if (!window.fb) return;
+    window.fb.onAuthChange(async (user) => {
+      const wasSignedOut = !currentUser;
+      currentUser = user;
+      updateAuthUI();
+
+      // Stop any previous listener
+      stopCloudListener();
+
+      if (user) {
+        // Just signed in — offer migration if we have local tasks
+        if (wasSignedOut && tasks.length > 0) {
+          const wantsMigrate = confirm(
+            `You have ${tasks.length} task${tasks.length === 1 ? '' : 's'} on this device. ` +
+            `Import ${tasks.length === 1 ? 'it' : 'them'} into your account so they sync across devices?`
+          );
+          if (wantsMigrate) {
+            // Push current local tasks to cloud — onSnapshot will then mirror back
+            try { await pushAllToCloud(); }
+            catch (e) { console.error('Migration push failed:', e); }
+          } else {
+            // User said no — clear local so cloud is the source of truth
+            tasks = [];
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+            render();
+          }
+        }
+        // Start listening for cloud changes
+        startCloudListener();
+      }
+    });
+  }
+
+  // Firebase loads asynchronously; wait for ready event if not yet attached
+  if (window.fb) bootAuth();
+  else window.addEventListener('firebase-ready', bootAuth, { once: true });
 
   // Mouse drag-to-scroll for date filters (desktop). Mobile already
   // supports horizontal swipe natively via overflow-x.
