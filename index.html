@@ -1266,21 +1266,18 @@
 
   .plain-list {
     margin: 0 16px 24px;
-    background: var(--card-body);
-    border-radius: 16px;
-    overflow: hidden;
-    border: 1px solid var(--line);
+    background: transparent;
+    border: none;
   }
-  [data-theme="dark"] .plain-list { background: var(--bg-2); }
+  [data-theme="dark"] .plain-list { background: transparent; }
 
   .plain-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 12px;
-    padding: 14px 16px;
+    padding: 14px 4px;
     cursor: pointer;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px dashed color-mix(in srgb, var(--ink-3) 40%, transparent);
     transition: background 0.15s;
   }
   .plain-row:last-child { border-bottom: none; }
@@ -1288,6 +1285,16 @@
   .plain-row.done .plain-title {
     text-decoration: line-through;
     color: var(--ink-3);
+  }
+  .plain-pill {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    min-width: 30px;
+    text-align: center;
   }
   .plain-title {
     flex: 1;
@@ -1297,13 +1304,11 @@
     line-height: 1.3;
     word-break: break-word;
   }
-  .plain-pill {
+  .plain-date {
     flex-shrink: 0;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
+    font-size: 12px;
+    color: var(--ink-2);
+    font-weight: 500;
   }
   .plain-row.p0 .plain-pill { background: var(--p0); color: var(--p0-on); }
   .plain-row.p1 .plain-pill { background: var(--p1); color: var(--p1-on); }
@@ -2117,8 +2122,9 @@
       row.className = `plain-row ${t.priority.toLowerCase()}` + (t.done ? ' done' : '');
       row.setAttribute('data-jump-id', t.id);
       row.innerHTML = `
-        <span class="plain-title">${escapeHtml(t.title)}</span>
         <span class="plain-pill">${t.priority}</span>
+        <span class="plain-title">${escapeHtml(t.title)}</span>
+        <span class="plain-date">${relativeDate(t.createdAt)}</span>
       `;
       row.addEventListener('click', () => {
         // Jump to the All feed and let the user see/edit the card
