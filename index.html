@@ -1507,6 +1507,7 @@
   }
   function saveCustomSets() {
     localStorage.setItem(CUSTOM_SETS_KEY, JSON.stringify(customSets));
+    scheduleSettingsCloudSave();
   }
   function allSets() {
     // User-created custom sets first, then built-ins
@@ -1619,6 +1620,90 @@
     if (unsubscribeTasks) { unsubscribeTasks(); unsubscribeTasks = null; }
   }
 
+  // ---------- Settings sync (theme + colors + custom sets) ----------
+  // Stored at users/{uid}/profile/settings as a single doc.
+  // Last-write-wins; debounced so rapid changes don't spam Firestore.
+  let unsubscribeSettings = null;
+  let suppressNextSettingsSave = false; // set true when applying remote snapshot
+  let settingsSaveTimer = null;
+
+  function settingsDocRef() {
+    if (!currentUser || !window.fb) return null;
+    const fb = window.fb;
+    return fb.doc(fb.db, 'users', currentUser.uid, 'profile', 'settings');
+  }
+
+  function scheduleSettingsCloudSave() {
+    if (!currentUser || suppressNextSettingsSave) {
+      suppressNextSettingsSave = false;
+      return;
+    }
+    clearTimeout(settingsSaveTimer);
+    settingsSaveTimer = setTimeout(async () => {
+      const ref = settingsDocRef();
+      if (!ref) return;
+      try {
+        await window.fb.setDoc(ref, {
+          theme,
+          colors,
+          customSets,
+          updatedAt: Date.now()
+        });
+      } catch (e) { console.error('Settings cloud save failed:', e); }
+    }, 400);
+  }
+
+  function startSettingsListener() {
+    const ref = settingsDocRef();
+    if (!ref) return;
+    unsubscribeSettings = window.fb.onSnapshot(ref, (snap) => {
+      if (!snap.exists()) return;
+      const data = snap.data();
+
+      let changed = false;
+      if (data.theme && data.theme !== theme) {
+        theme = data.theme;
+        localStorage.setItem(THEME_KEY, theme);
+        applyTheme();
+        changed = true;
+      }
+      if (data.colors && typeof data.colors === 'object') {
+        const remote = JSON.stringify(data.colors);
+        const local = JSON.stringify(colors);
+        if (remote !== local) {
+          colors = { ...DEFAULT_COLORS, ...data.colors };
+          localStorage.setItem(COLORS_KEY, JSON.stringify(colors));
+          applyColors();
+          changed = true;
+        }
+      }
+      if (Array.isArray(data.customSets)) {
+        const remote = JSON.stringify(data.customSets);
+        const local = JSON.stringify(customSets);
+        if (remote !== local) {
+          customSets = data.customSets;
+          localStorage.setItem(CUSTOM_SETS_KEY, JSON.stringify(customSets));
+          changed = true;
+        }
+      }
+      if (changed) {
+        // Suppress the round-trip — applying remote shouldn't trigger another upload
+        suppressNextSettingsSave = true;
+        // Refresh any pickers that might be open
+        if (document.getElementById('settings-sheet').classList.contains('open')) {
+          renderThemePicker();
+          renderColorPicker();
+        }
+        render();
+      }
+    }, (err) => {
+      console.error('Settings listener error:', err);
+    });
+  }
+  function stopSettingsListener() {
+    if (unsubscribeSettings) { unsubscribeSettings(); unsubscribeSettings = null; }
+  }
+
   // ---------- Colors ----------
   function loadColors() {
     try {
@@ -1631,6 +1716,7 @@
   }
   function saveColors() {
     localStorage.setItem(COLORS_KEY, JSON.stringify(colors));
+    scheduleSettingsCloudSave();
   }
   // Build a soft tint of a color for backgrounds (mixes with white)
   function softTint(hex) {
@@ -2276,6 +2362,7 @@
         localStorage.setItem(THEME_KEY, theme);
         applyTheme();
         renderThemePicker();
+        scheduleSettingsCloudSave();
       };
     });
   }
@@ -2778,6 +2865,7 @@
       // Stop any previous listeners
       stopCloudListener();
       stopProfileListener();
+      stopSettingsListener();
 
       if (!user) {
         // Reset profile so old data doesn't leak into next sign-in
@@ -2786,14 +2874,17 @@
         return;
       }
 
-      // Just signed in — offer migration if we have local tasks
-      if (wasSignedOut && tasks.length > 0) {
+      // Migration: ask once per device, the FIRST time we ever see this user
+      // signed in here. Subsequent reloads just restore the session quietly.
+      const migrationKey = 'tasks.migrated.' + user.uid;
+      const alreadyMigrated = localStorage.getItem(migrationKey) === '1';
+
+      if (!alreadyMigrated && tasks.length > 0) {
         const wantsMigrate = confirm(
           `You have ${tasks.length} task${tasks.length === 1 ? '' : 's'} on this device. ` +
           `Import ${tasks.length === 1 ? 'it' : 'them'} into your account so they sync across devices?`
         );
         if (wantsMigrate) {
-          // Push current local tasks to cloud — onSnapshot will then mirror back
           try { await pushAllToCloud(); }
           catch (e) { console.error('Migration push failed:', e); }
         } else {
@@ -2802,10 +2893,17 @@
           localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
           render();
         }
+        // Mark migration as resolved either way so we never ask again on this device
+        localStorage.setItem(migrationKey, '1');
+      } else if (!alreadyMigrated) {
+        // No local tasks but first sign-in — still mark as migrated
+        localStorage.setItem(migrationKey, '1');
       }
+
       // Start listening for cloud changes
       startCloudListener();
       startProfileListener();
+      startSettingsListener();
     });
   }
 
