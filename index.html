@@ -2,8 +2,24 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Doneit</title>
+
+<!-- App icon (orange square with white D — iOS rounds the corners automatically) -->
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj4KPHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIGZpbGw9IiNERTZEMjAiLz4KPHBhdGggZmlsbD0iI2ZmZmZmZiIgZmlsbC1ydWxlPSJldmVub2RkIgogIGQ9Ik01MiAzNiBIMTAwIGE1NCA1NCAwIDAgMSAwIDEwOCBINTIgWgogICAgIE03NSA2MCBWMTIwIEgxMDAgYTMwIDMwIDAgMCAwIDAgLTYwIFoiLz4KPC9zdmc+">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj4KPHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIGZpbGw9IiNERTZEMjAiLz4KPHBhdGggZmlsbD0iI2ZmZmZmZiIgZmlsbC1ydWxlPSJldmVub2RkIgogIGQ9Ik01MiAzNiBIMTAwIGE1NCA1NCAwIDAgMSAwIDEwOCBINTIgWgogICAgIE03NSA2MCBWMTIwIEgxMDAgYTMwIDMwIDAgMCAwIDAgLTYwIFoiLz4KPC9zdmc+">
+
+<!-- iOS standalone mode: launches like a native app from the home screen -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Doneit">
+
+<!-- Theme color matches brand orange — sets browser/status bar tint -->
+<meta name="theme-color" content="#DE6D20">
+
+<!-- Web App Manifest (Android/Chrome PWA install) -->
+<link rel="manifest" href='data:application/manifest+json;base64,ewogICJuYW1lIjogIkRvbmVpdCIsCiAgInNob3J0X25hbWUiOiAiRG9uZWl0IiwKICAic3RhcnRfdXJsIjogIi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmNGYxZWMiLAogICJ0aGVtZV9jb2xvciI6ICIjREU2RDIwIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhacFpYZENiM2c5SWpBZ01DQXhPREFnTVRnd0lqNEtQSEpsWTNRZ2QybGtkR2c5SWpFNE1DSWdhR1ZwWjJoMFBTSXhPREFpSUdacGJHdzlJaU5FUlRaRU1qQWlMejRLUEhCaGRHZ2dabWxzYkQwaUkyWm1abVptWmlJZ1ptbHNiQzF5ZFd4bFBTSmxkbVZ1YjJSa0lnb2dJR1E5SWswMU1pQXpOaUJJTVRBd0lHRTFOQ0ExTkNBd0lEQWdNU0F3SURFd09DQklOVElnV2dvZ0lDQWdJRTAzTlNBMk1DQldNVEl3SUVneE1EQWdZVE13SURNd0lEQWdNQ0F3SUMwMk1DQmFJaTgrQ2p3dmMzWm5QZz09IiwKICAgICAgInNpemVzIjogIjE4MHgxODAiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIiwKICAgICAgInB1cnBvc2UiOiAiYW55IG1hc2thYmxlIgogICAgfQogIF0KfQo='>
 
 <!-- Firebase SDK (modular) — exposes a small surface to window.fb -->
 <script type="module">
@@ -297,7 +313,9 @@
     position: sticky; top: 0;
     background: var(--bg);
     z-index: 50;
-    padding: 18px 18px 10px;
+    /* Add safe-area inset on top so notch / Dynamic Island doesn't overlap
+       when launched as a home-screen app. Falls back to original padding. */
+    padding: max(18px, env(safe-area-inset-top, 0px) + 8px) 18px 10px;
     display: flex; align-items: center; justify-content: space-between;
     border-bottom: 1px solid var(--line);
   }
@@ -639,7 +657,7 @@
   /* ---------- Floating + button ---------- */
   .fab {
     position: fixed;
-    bottom: 96px;
+    bottom: max(96px, env(safe-area-inset-bottom, 0px) + 88px);
     left: 50%; transform: translateX(-50%);
     width: 60px; height: 60px;
     border-radius: 50%;
@@ -659,7 +677,7 @@
   nav.bottom {
     position: fixed;
     left: 50%; transform: translateX(-50%);
-    bottom: 16px;
+    bottom: max(16px, env(safe-area-inset-bottom, 0px) + 8px);
     width: calc(100% - 32px); max-width: 428px;
     background: var(--bg-2);
     border: 1px solid var(--line);
