@@ -12,7 +12,7 @@
     getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
   import {
-    getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot,
+    getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot,
     query, orderBy, writeBatch, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
@@ -38,7 +38,7 @@
     signOut: () => signOut(auth),
     onAuthChange: (cb) => onAuthStateChanged(auth, cb),
     // Firestore helpers
-    collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy,
+    collection, doc, setDoc, getDoc, deleteDoc, onSnapshot, query, orderBy,
     writeBatch, serverTimestamp
   };
 
@@ -169,8 +169,22 @@
     width: 40px; height: 40px;
     border-radius: 50%;
     flex-shrink: 0;
-    object-fit: cover;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.1s;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-2);
+    user-select: none;
+    line-height: 1;
   }
+  .account-avatar:hover { transform: scale(1.05); }
+  .account-avatar:active { transform: scale(0.95); }
+  .account-avatar img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .account-avatar.emoji-mode { font-size: 22px; }
   .account-text { flex: 1; min-width: 0; }
   .account-title {
     font-size: 14px; font-weight: 700; color: var(--ink);
@@ -207,6 +221,73 @@
     border-color: rgba(192, 57, 43, 0.3);
   }
 
+  /* ---------- Avatar picker sheet ---------- */
+  .avatar-preview {
+    display: flex; justify-content: center;
+    margin-bottom: 18px;
+  }
+  .avatar-preview-circle {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 44px;
+    line-height: 1;
+    user-select: none;
+    background: #DE6D20;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    transition: background 0.2s;
+  }
+
+  .emoji-row, .bg-row {
+    display: flex; gap: 8px;
+    overflow-x: auto;
+    padding: 4px 4px 8px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    cursor: grab;
+  }
+  .emoji-row::-webkit-scrollbar, .bg-row::-webkit-scrollbar { display: none; }
+  .emoji-row.dragging, .bg-row.dragging { cursor: grabbing; }
+
+  .emoji-pick {
+    flex-shrink: 0;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    background: var(--bg-2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    line-height: 1;
+    transition: transform 0.1s, background 0.15s;
+    padding: 0;
+    font-family: inherit;
+  }
+  [data-theme="dark"] .emoji-pick { background: #2a2a2e; }
+  .emoji-pick:hover { transform: scale(1.06); }
+  .emoji-pick.selected { border-color: var(--ink); }
+
+  .bg-pick {
+    flex-shrink: 0;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.1s;
+  }
+  .bg-pick:hover { transform: scale(1.06); }
+  .bg-pick.selected { border-color: var(--ink); }
+
+  #avatar-revert {
+    background: transparent;
+    color: #DE6D20;
+  }
+  #avatar-revert:hover {
+    background: rgba(222, 109, 32, 0.1);
+  }
+
   /* Sticky header — opaque so the wordmark and icons stay readable
      regardless of what's scrolling behind it. */
   header {
@@ -217,6 +298,29 @@
     display: flex; align-items: center; justify-content: space-between;
     border-bottom: 1px solid var(--line);
   }
+  .topbar-left {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .topbar-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--bg-2);
+    overflow: hidden;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    user-select: none;
+    line-height: 1;
+    transition: transform 0.1s;
+  }
+  .topbar-avatar:hover { transform: scale(1.06); }
+  .topbar-avatar:active { transform: scale(0.94); }
+  .topbar-avatar img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .topbar-avatar.emoji-mode { font-size: 17px; color: #fff; }
   .icon-btn {
     width: 40px; height: 40px;
     border-radius: 12px; border: none;
@@ -1043,9 +1147,12 @@
 
   <!-- Top bar -->
   <header>
-    <button class="icon-btn" id="settings-btn" aria-label="Settings">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    </button>
+    <div class="topbar-left">
+      <button class="icon-btn" id="settings-btn" aria-label="Settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <div class="topbar-avatar" id="topbar-avatar" style="display:none;" aria-label="Edit profile picture"></div>
+    </div>
     <div class="brand">Doneit</div>
     <button class="icon-btn" id="search-btn" aria-label="Search">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -1148,7 +1255,7 @@
         <button class="signin-btn" id="signin-btn-2">Sign in</button>
       </div>
       <div class="account-card" id="account-signed-in" style="display:none;">
-        <img class="account-avatar" id="account-avatar" referrerpolicy="no-referrer" alt="">
+        <div class="account-avatar" id="account-avatar"></div>
         <div class="account-text">
           <div class="account-title" id="account-name">—</div>
           <div class="account-sub" id="account-email">—</div>
@@ -1209,6 +1316,32 @@
       <button class="custom-cancel" id="custom-set-cancel">Cancel</button>
       <button class="custom-delete" id="custom-set-delete" style="display:none;">Delete</button>
       <button class="save-btn" id="custom-set-save">Save</button>
+    </div>
+  </div>
+
+  <!-- Avatar picker -->
+  <div class="sheet" id="avatar-sheet">
+    <div class="grabber"></div>
+    <h2>Profile picture</h2>
+
+    <div class="avatar-preview" id="avatar-preview">
+      <div class="avatar-preview-circle" id="avatar-preview-circle">😀</div>
+    </div>
+
+    <div class="field">
+      <label>Emoji</label>
+      <div class="emoji-row" id="emoji-row"></div>
+    </div>
+
+    <div class="field">
+      <label>Background</label>
+      <div class="bg-row" id="avatar-bg-row"></div>
+    </div>
+
+    <div class="custom-set-actions">
+      <button class="custom-cancel" id="avatar-cancel">Cancel</button>
+      <button class="custom-delete" id="avatar-revert">Use Google photo</button>
+      <button class="save-btn" id="avatar-save">Save</button>
     </div>
   </div>
 
@@ -1978,6 +2111,8 @@
     settingsSheet.classList.remove('open');
     const customSheet = document.getElementById('custom-set-sheet');
     if (customSheet) customSheet.classList.remove('open');
+    const avatarSheet = document.getElementById('avatar-sheet');
+    if (avatarSheet) avatarSheet.classList.remove('open');
     backdrop.classList.remove('open');
   }
   backdrop.addEventListener('click', closeSheets);
@@ -2318,27 +2453,61 @@
   render();
 
   // ---------- Auth wiring ----------
+  // Avatar palettes (kept in sync with picker UI)
+  const EMOJI_OPTIONS = ['😀','🎯','🌟','🚀','☕','🌸','🍃','🌙','🔥','⚡','🎨','📚','🐱','🐶','🦊','🌈'];
+  const BG_OPTIONS = ['#DE6D20','#4A644D','#1F3850','#582957','#69362C','#114542','#AD764B','#515151'];
+
+  // User profile state (loaded from Firestore once signed in)
+  let userProfile = null; // { emoji, bg } when set, otherwise null = use Google photo
+  let unsubscribeProfile = null;
+
+  function renderAccountAvatar() {
+    const wrap = document.getElementById('account-avatar');
+    const topbar = document.getElementById('topbar-avatar');
+
+    // Topbar avatar is only visible when signed in
+    if (topbar) topbar.style.display = currentUser ? '' : 'none';
+
+    [wrap, topbar].forEach(el => {
+      if (!el) return;
+      el.innerHTML = '';
+      el.classList.remove('emoji-mode');
+      el.style.background = '';
+      el.style.color = '';
+
+      if (userProfile && userProfile.emoji) {
+        el.classList.add('emoji-mode');
+        el.style.background = userProfile.bg || '#DE6D20';
+        el.textContent = userProfile.emoji;
+      } else if (currentUser && currentUser.photoURL) {
+        const img = document.createElement('img');
+        img.src = currentUser.photoURL;
+        img.referrerPolicy = 'no-referrer';
+        img.alt = '';
+        el.appendChild(img);
+      } else if (currentUser) {
+        const initial = (currentUser.displayName || currentUser.email || '?').trim().charAt(0).toUpperCase();
+        el.classList.add('emoji-mode');
+        el.style.background = '#DE6D20';
+        el.style.color = '#fff';
+        el.textContent = initial;
+      }
+    });
+  }
+
   function updateAuthUI() {
     const syncBar = document.getElementById('sync-bar');
     const signedOutCard = document.getElementById('account-signed-out');
     const signedInCard = document.getElementById('account-signed-in');
 
     if (currentUser) {
-      // Hide top sync bar
       syncBar.classList.add('hidden');
-      // Swap settings account cards
       signedOutCard.style.display = 'none';
       signedInCard.style.display = '';
       document.getElementById('account-name').textContent =
         currentUser.displayName || currentUser.email || 'Signed in';
       document.getElementById('account-email').textContent = currentUser.email || '';
-      const avatar = document.getElementById('account-avatar');
-      if (currentUser.photoURL) {
-        avatar.src = currentUser.photoURL;
-        avatar.style.display = '';
-      } else {
-        avatar.style.display = 'none';
-      }
+      renderAccountAvatar();
     } else {
       syncBar.classList.remove('hidden');
       signedOutCard.style.display = '';
@@ -2365,9 +2534,113 @@
     catch (err) { console.error('Sign-out error:', err); }
   }
 
+  // ---------- User profile (custom avatar) ----------
+  function profileDocRef() {
+    if (!currentUser || !window.fb) return null;
+    const fb = window.fb;
+    return fb.doc(fb.db, 'users', currentUser.uid, 'profile', 'avatar');
+  }
+
+  function startProfileListener() {
+    const ref = profileDocRef();
+    if (!ref) return;
+    unsubscribeProfile = window.fb.onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        userProfile = (data && data.emoji) ? { emoji: data.emoji, bg: data.bg || '#DE6D20' } : null;
+      } else {
+        userProfile = null;
+      }
+      renderAccountAvatar();
+    }, (err) => {
+      console.error('Profile listener error:', err);
+    });
+  }
+  function stopProfileListener() {
+    if (unsubscribeProfile) { unsubscribeProfile(); unsubscribeProfile = null; }
+  }
+
+  async function saveProfile(profile) {
+    const ref = profileDocRef();
+    if (!ref) return;
+    if (profile === null) {
+      // Revert to Google photo: delete the doc
+      try { await window.fb.deleteDoc(ref); }
+      catch (e) { console.error('Profile revert failed:', e); }
+    } else {
+      try { await window.fb.setDoc(ref, profile); }
+      catch (e) { console.error('Profile save failed:', e); }
+    }
+  }
+
+  // ---------- Avatar picker ----------
+  let draftAvatar = { emoji: '😀', bg: '#DE6D20' };
+
+  function openAvatarPicker() {
+    if (!currentUser) return;
+    // Pre-fill with current selection or sensible default
+    if (userProfile && userProfile.emoji) {
+      draftAvatar = { emoji: userProfile.emoji, bg: userProfile.bg || '#DE6D20' };
+    } else {
+      draftAvatar = { emoji: EMOJI_OPTIONS[0], bg: BG_OPTIONS[0] };
+    }
+    renderAvatarPicker();
+    openSheet(document.getElementById('avatar-sheet'));
+  }
+
+  function renderAvatarPicker() {
+    const previewCircle = document.getElementById('avatar-preview-circle');
+    previewCircle.textContent = draftAvatar.emoji;
+    previewCircle.style.background = draftAvatar.bg;
+
+    const emojiRow = document.getElementById('emoji-row');
+    emojiRow.innerHTML = EMOJI_OPTIONS.map(e =>
+      `<button class="emoji-pick${e === draftAvatar.emoji ? ' selected' : ''}" data-emoji="${e}">${e}</button>`
+    ).join('');
+    emojiRow.querySelectorAll('.emoji-pick').forEach(btn => {
+      btn.addEventListener('click', () => {
+        draftAvatar.emoji = btn.getAttribute('data-emoji');
+        renderAvatarPicker();
+      });
+    });
+
+    const bgRow = document.getElementById('avatar-bg-row');
+    bgRow.innerHTML = BG_OPTIONS.map(c =>
+      `<button class="bg-pick${c.toUpperCase() === draftAvatar.bg.toUpperCase() ? ' selected' : ''}" data-bg="${c}" style="background:${c}"></button>`
+    ).join('');
+    bgRow.querySelectorAll('.bg-pick').forEach(btn => {
+      btn.addEventListener('click', () => {
+        draftAvatar.bg = btn.getAttribute('data-bg');
+        renderAvatarPicker();
+      });
+    });
+
+    enableHorizontalScroll(emojiRow);
+    enableHorizontalScroll(bgRow);
+  }
+
   document.getElementById('signin-btn').addEventListener('click', handleSignIn);
   document.getElementById('signin-btn-2').addEventListener('click', handleSignIn);
   document.getElementById('signout-btn').addEventListener('click', handleSignOut);
+
+  // Tap the avatar in the account card to open the picker
+  document.getElementById('account-avatar').addEventListener('click', openAvatarPicker);
+  // Tap the small avatar in the topbar to open the picker directly
+  document.getElementById('topbar-avatar').addEventListener('click', openAvatarPicker);
+
+  document.getElementById('avatar-cancel').addEventListener('click', closeSheets);
+  document.getElementById('avatar-save').addEventListener('click', async () => {
+    userProfile = { ...draftAvatar };
+    renderAccountAvatar();
+    closeSheets();
+    await saveProfile(userProfile);
+  });
+  document.getElementById('avatar-revert').addEventListener('click', async () => {
+    userProfile = null;
+    renderAccountAvatar();
+    closeSheets();
+    await saveProfile(null);
+  });
 
   function bootAuth() {
     if (!window.fb) return;
@@ -2376,30 +2649,37 @@
       currentUser = user;
       updateAuthUI();
 
-      // Stop any previous listener
+      // Stop any previous listeners
       stopCloudListener();
+      stopProfileListener();
 
-      if (user) {
-        // Just signed in — offer migration if we have local tasks
-        if (wasSignedOut && tasks.length > 0) {
-          const wantsMigrate = confirm(
-            `You have ${tasks.length} task${tasks.length === 1 ? '' : 's'} on this device. ` +
-            `Import ${tasks.length === 1 ? 'it' : 'them'} into your account so they sync across devices?`
-          );
-          if (wantsMigrate) {
-            // Push current local tasks to cloud — onSnapshot will then mirror back
-            try { await pushAllToCloud(); }
-            catch (e) { console.error('Migration push failed:', e); }
-          } else {
-            // User said no — clear local so cloud is the source of truth
-            tasks = [];
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-            render();
-          }
-        }
-        // Start listening for cloud changes
-        startCloudListener();
+      if (!user) {
+        // Reset profile so old data doesn't leak into next sign-in
+        userProfile = null;
+        renderAccountAvatar();
+        return;
       }
+
+      // Just signed in — offer migration if we have local tasks
+      if (wasSignedOut && tasks.length > 0) {
+        const wantsMigrate = confirm(
+          `You have ${tasks.length} task${tasks.length === 1 ? '' : 's'} on this device. ` +
+          `Import ${tasks.length === 1 ? 'it' : 'them'} into your account so they sync across devices?`
+        );
+        if (wantsMigrate) {
+          // Push current local tasks to cloud — onSnapshot will then mirror back
+          try { await pushAllToCloud(); }
+          catch (e) { console.error('Migration push failed:', e); }
+        } else {
+          // User said no — clear local so cloud is the source of truth
+          tasks = [];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+          render();
+        }
+      }
+      // Start listening for cloud changes
+      startCloudListener();
+      startProfileListener();
     });
   }
 
