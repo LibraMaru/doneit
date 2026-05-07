@@ -497,21 +497,20 @@
     word-break: break-word;
     overflow-wrap: anywhere;
     cursor: text;
-    /* Marker highlight: brand orange stripe behind the lower half of the text.
-       The 0.45em offset puts it where a real highlighter would sit. */
+    /* Soft marker highlight — a faint orange bar at the baseline of the text.
+       The shadow reading is softer than the previous mid-line stripe. */
     background: linear-gradient(
       180deg,
       transparent 0,
-      transparent 55%,
-      rgba(222, 109, 32, 0.45) 55%,
-      rgba(222, 109, 32, 0.45) 92%,
-      transparent 92%
+      transparent 70%,
+      rgba(222, 109, 32, 0.22) 70%,
+      rgba(222, 109, 32, 0.22) 95%,
+      transparent 95%
     );
     background-size: 100% 100%;
     background-repeat: no-repeat;
-    /* Tighten so the highlight only covers actual text, not full row width */
     display: inline;
-    padding: 0 4px;
+    padding: 0 3px;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
