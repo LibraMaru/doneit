@@ -82,10 +82,9 @@
     --pill-border: rgba(255,255,255,0.85);
     --dash: rgba(0,0,0,0.1);
 
-    --p0: #DE6D20;
-    --p1: #4A644D;
-    --p2: #515151;
-    --p3: #DCDCDC;
+    --p0: #4A644D;
+    --p1: #DE6D20;
+    --p2: #DCDCDC;
   }
 
   /* ---------- Dark theme: neutral grey gradient ---------- */
@@ -104,10 +103,9 @@
     --pill-border: rgba(255,255,255,0.85);
     --dash: rgba(255,255,255,0.3);
 
-    --p0: #DE6D20;
-    --p1: #4A644D;
-    --p2: #515151;
-    --p3: #DCDCDC;
+    --p0: #4A644D;
+    --p1: #DE6D20;
+    --p2: #DCDCDC;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -422,7 +420,6 @@
   .card.p0, .stack-card.p0 { background: var(--p0); }
   .card.p1, .stack-card.p1 { background: var(--p1); }
   .card.p2, .stack-card.p2 { background: var(--p2); }
-  .card.p3, .stack-card.p3 { background: var(--p3); }
   @keyframes rise {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -440,7 +437,6 @@
   .ticket.p0 { background: var(--p0); color: var(--p0-on); }
   .ticket.p1 { background: var(--p1); color: var(--p1-on); }
   .ticket.p2 { background: var(--p2); color: var(--p2-on); }
-  .ticket.p3 { background: var(--p3); color: var(--p3-on); }
 
   .ticket .pill {
     display: inline-flex; align-items: center; gap: 6px;
@@ -458,31 +454,25 @@
   .card.p0 .title, .stack-card.p0 .title { color: var(--p0-on); font-weight: 800; }
   .card.p1 .title, .stack-card.p1 .title { color: var(--p1-on); font-weight: 800; }
   .card.p2 .title, .stack-card.p2 .title { color: var(--p2-on); font-weight: 800; }
-  .card.p3 .title, .stack-card.p3 .title { color: var(--p3-on); font-weight: 800; }
   .card.p0 .check-label, .stack-card.p0 .check-label { color: color-mix(in srgb, var(--p0-on) 70%, transparent); }
   .card.p1 .check-label, .stack-card.p1 .check-label { color: color-mix(in srgb, var(--p1-on) 70%, transparent); }
   .card.p2 .check-label, .stack-card.p2 .check-label { color: color-mix(in srgb, var(--p2-on) 70%, transparent); }
-  .card.p3 .check-label, .stack-card.p3 .check-label { color: color-mix(in srgb, var(--p3-on) 70%, transparent); }
 
   /* Checkbox border + checkmark adapt to card priority */
   .card.p0 .checkbox, .stack-card.p0 .checkbox { border-color: color-mix(in srgb, var(--p0-on) 60%, transparent); }
   .card.p1 .checkbox, .stack-card.p1 .checkbox { border-color: color-mix(in srgb, var(--p1-on) 60%, transparent); }
   .card.p2 .checkbox, .stack-card.p2 .checkbox { border-color: color-mix(in srgb, var(--p2-on) 60%, transparent); }
-  .card.p3 .checkbox, .stack-card.p3 .checkbox { border-color: color-mix(in srgb, var(--p3-on) 60%, transparent); }
   .card.p0 .checkbox.checked, .stack-card.p0 .checkbox.checked { background: var(--p0-on); border-color: var(--p0-on); }
   .card.p1 .checkbox.checked, .stack-card.p1 .checkbox.checked { background: var(--p1-on); border-color: var(--p1-on); }
   .card.p2 .checkbox.checked, .stack-card.p2 .checkbox.checked { background: var(--p2-on); border-color: var(--p2-on); }
-  .card.p3 .checkbox.checked, .stack-card.p3 .checkbox.checked { background: var(--p3-on); border-color: var(--p3-on); }
   .card.p0 .checkbox.checked svg, .stack-card.p0 .checkbox.checked svg { stroke: var(--p0); }
   .card.p1 .checkbox.checked svg, .stack-card.p1 .checkbox.checked svg { stroke: var(--p1); }
   .card.p2 .checkbox.checked svg, .stack-card.p2 .checkbox.checked svg { stroke: var(--p2); }
-  .card.p3 .checkbox.checked svg, .stack-card.p3 .checkbox.checked svg { stroke: var(--p3); }
 
   /* Delete button on card */
   .card.p0 .delete-btn, .stack-card.p0 .delete-btn { color: color-mix(in srgb, var(--p0-on) 70%, transparent); }
   .card.p1 .delete-btn, .stack-card.p1 .delete-btn { color: color-mix(in srgb, var(--p1-on) 70%, transparent); }
   .card.p2 .delete-btn, .stack-card.p2 .delete-btn { color: color-mix(in srgb, var(--p2-on) 70%, transparent); }
-  .card.p3 .delete-btn, .stack-card.p3 .delete-btn { color: color-mix(in srgb, var(--p3-on) 70%, transparent); }
 
   /* Card is one solid priority color top-to-bottom, so no notch needed */
   .ticket::after { display: none; }
@@ -497,10 +487,10 @@
     word-break: break-word;
     overflow-wrap: anywhere;
     cursor: text;
-    /* Real soft shadow under the title — blurred orange glow, no opaque stripe */
+    /* Soft grey drop shadow under the title */
     text-shadow:
-      0 2px 6px rgba(222, 109, 32, 0.55),
-      0 4px 14px rgba(222, 109, 32, 0.35);
+      0 2px 6px rgba(0, 0, 0, 0.35),
+      0 4px 14px rgba(0, 0, 0, 0.22);
   }
   .completed .title {
     text-decoration: line-through;
@@ -530,7 +520,6 @@
   .card.p0 .title-input, .stack-card.p0 .title-input { color: var(--p0-on); }
   .card.p1 .title-input, .stack-card.p1 .title-input { color: var(--p1-on); }
   .card.p2 .title-input, .stack-card.p2 .title-input { color: var(--p2-on); }
-  .card.p3 .title-input, .stack-card.p3 .title-input { color: var(--p3-on); }
   /* Inline priority chips (only shown while editing) */
   .inline-priority {
     display: flex; gap: 6px;
@@ -560,11 +549,9 @@
   .card.p0 .inline-priority button.active, .stack-card.p0 .inline-priority button.active { color: var(--p0); background: var(--p0-on); }
   .card.p1 .inline-priority button.active, .stack-card.p1 .inline-priority button.active { color: var(--p1); background: var(--p1-on); }
   .card.p2 .inline-priority button.active, .stack-card.p2 .inline-priority button.active { color: var(--p2); background: var(--p2-on); }
-  .card.p3 .inline-priority button.active, .stack-card.p3 .inline-priority button.active { color: var(--p3); background: var(--p3-on); }
   .card.p0 .inline-priority, .stack-card.p0 .inline-priority { color: var(--p0-on); }
   .card.p1 .inline-priority, .stack-card.p1 .inline-priority { color: var(--p1-on); }
   .card.p2 .inline-priority, .stack-card.p2 .inline-priority { color: var(--p2-on); }
-  .card.p3 .inline-priority, .stack-card.p3 .inline-priority { color: var(--p3-on); }
   .meta {
     margin-top: 8px; font-size: 13px; color: var(--on-card-soft);
     display: flex; align-items: center; gap: 6px;
@@ -611,7 +598,6 @@
   .card.p0::before, .stack-card.p0::before { border-top-color: color-mix(in srgb, var(--p0-on) 35%, transparent); }
   .card.p1::before, .stack-card.p1::before { border-top-color: color-mix(in srgb, var(--p1-on) 35%, transparent); }
   .card.p2::before, .stack-card.p2::before { border-top-color: color-mix(in srgb, var(--p2-on) 35%, transparent); }
-  .card.p3::before, .stack-card.p3::before { border-top-color: color-mix(in srgb, var(--p3-on) 35%, transparent); }
 
   /* Footer with checkbox */
   .footer {
@@ -634,7 +620,6 @@
   .checkbox.checked.p0 { background: var(--p0); }
   .checkbox.checked.p1 { background: var(--p1); }
   .checkbox.checked.p2 { background: var(--p2); }
-  .checkbox.checked.p3 { background: var(--p3); }
   .checkbox svg {
     width: 16px; height: 16px;
     fill: none; stroke: white; stroke-width: 3;
@@ -793,11 +778,9 @@
   .priority-pick.selected.p0 { border-color: var(--p0); background: rgba(124, 58, 237, 0.18); }
   .priority-pick.selected.p1 { border-color: var(--p1); background: rgba(251, 140, 0, 0.18); }
   .priority-pick.selected.p2 { border-color: var(--p2); background: rgba(253, 216, 53, 0.18); }
-  .priority-pick.selected.p3 { border-color: var(--p3); background: rgba(67, 160, 71, 0.18); }
   .priority-pick .swatch.p0 { background: var(--p0); }
   .priority-pick .swatch.p1 { background: var(--p1); }
   .priority-pick .swatch.p2 { background: var(--p2); }
-  .priority-pick .swatch.p3 { background: var(--p3); }
 
   .save-btn {
     width: 100%; padding: 16px;
@@ -1319,7 +1302,6 @@
   .plain-row.p0 .plain-pill { background: var(--p0); color: var(--p0-on); }
   .plain-row.p1 .plain-pill { background: var(--p1); color: var(--p1-on); }
   .plain-row.p2 .plain-pill { background: var(--p2); color: var(--p2-on); }
-  .plain-row.p3 .plain-pill { background: var(--p3); color: var(--p3-on); }
 
   /* ============================================================
      Responsive scaling — proportional, not piece-by-piece.
@@ -1432,22 +1414,17 @@
         <button class="priority-pick selected p0" data-p="P0">
           <div class="swatch p0"></div>
           <div class="pname">P0</div>
-          <div class="plabel">Top</div>
+          <div class="plabel">High</div>
         </button>
         <button class="priority-pick p1" data-p="P1">
           <div class="swatch p1"></div>
           <div class="pname">P1</div>
-          <div class="plabel">High</div>
+          <div class="plabel">Medium</div>
         </button>
         <button class="priority-pick p2" data-p="P2">
           <div class="swatch p2"></div>
           <div class="pname">P2</div>
-          <div class="plabel">Neutral</div>
-        </button>
-        <button class="priority-pick p3" data-p="P3">
-          <div class="swatch p3"></div>
-          <div class="pname">P3</div>
-          <div class="plabel">Chill</div>
+          <div class="plabel">Low</div>
         </button>
       </div>
     </div>
@@ -1569,7 +1546,7 @@
   const COLORS_KEY = 'tasks.colors.v1';
   const THEME_KEY = 'tasks.theme.v1';
   const CUSTOM_SETS_KEY = 'tasks.customsets.v1';
-  const PRIORITY_LABEL = { P0: 'Top', P1: 'High', P2: 'Neutral', P3: 'Chill' };
+  const PRIORITY_LABEL = { P0: 'High', P1: 'Medium', P2: 'Low' };
 
   // Curated palette for the custom set creator. Grouped roughly by hue.
   const SWATCH_PALETTE = [
@@ -1588,77 +1565,79 @@
   ];
 
   const DEFAULT_COLORS = {
-    P0: '#DE6D20', // orange
-    P1: '#4A644D', // swamp green
-    P2: '#515151', // dark grey — neutral
-    P3: '#DCDCDC'  // light grey — chill
+    P0: '#4A644D', // swamp green
+    P1: '#DE6D20', // brand orange
+    P2: '#DCDCDC'  // light grey
   };
-  // Curated theme sets — user picks one and all 4 priorities update
+  // Curated theme sets — user picks one and all 3 priorities update
+  // Each set has its darkest swatch dropped; remaining colors sorted dark→light
   const COLOR_SETS = [
     {
       id: 'earthy',
       name: 'Earthy',
-      colors: { P0: '#DE6D20', P1: '#4A644D', P2: '#515151', P3: '#DCDCDC' }
+      colors: { P0: '#4A644D', P1: '#DE6D20', P2: '#DCDCDC' }
     },
     {
       id: 'rosewood',
       name: 'Rosewood',
-      colors: { P0: '#3F2933', P1: '#D7727C', P2: '#BDA06A', P3: '#D8CAB7' }
+      colors: { P0: '#D7727C', P1: '#BDA06A', P2: '#D8CAB7' }
     },
     {
       id: 'atlas',
       name: 'Atlas',
-      colors: { P0: '#1F2D4C', P1: '#5B4636', P2: '#A38A4F', P3: '#A9B5C6' }
+      colors: { P0: '#5B4636', P1: '#A38A4F', P2: '#A9B5C6' }
     },
     {
       id: 'clay',
       name: 'Clay',
-      colors: { P0: '#69362C', P1: '#AD764B', P2: '#706F5B', P3: '#DED6C8' }
+      colors: { P0: '#706F5B', P1: '#AD764B', P2: '#DED6C8' }
     },
     {
       id: 'forest',
       name: 'Forest',
-      colors: { P0: '#114542', P1: '#C9A479', P2: '#A8B6AF', P3: '#DED6C8' }
+      colors: { P0: '#C9A479', P1: '#A8B6AF', P2: '#DED6C8' }
     },
     {
       id: 'twilight',
       name: 'Twilight',
-      colors: { P0: '#582957', P1: '#1F3850', P2: '#A8B8CC', P3: '#E1D9EF' }
+      colors: { P0: '#582957', P1: '#A8B8CC', P2: '#E1D9EF' }
     },
     {
       id: 'caramel',
       name: 'Caramel',
-      colors: { P0: '#5D4037', P1: '#C2B280', P2: '#F7E7C9', P3: '#FFFFF0' }
+      colors: { P0: '#C2B280', P1: '#F7E7C9', P2: '#FFFFF0' }
     },
     {
       id: 'royal',
       name: 'Royal',
-      colors: { P0: '#66023C', P1: '#5D3954', P2: '#CFB53B', P3: '#CAD183' }
+      colors: { P0: '#5D3954', P1: '#CFB53B', P2: '#CAD183' }
     },
     {
       id: 'hearth',
       name: 'Hearth',
-      colors: { P0: '#383431', P1: '#95401C', P2: '#BD9965', P3: '#DED6C8' }
+      colors: { P0: '#95401C', P1: '#BD9965', P2: '#DED6C8' }
     },
     {
       id: 'fog',
       name: 'Fog',
-      colors: { P0: '#47505E', P1: '#5A716C', P2: '#C9A479', P3: '#A8B6AF' }
+      colors: { P0: '#5A716C', P1: '#C9A479', P2: '#A8B6AF' }
     },
     {
       id: 'sakura',
       name: 'Sakura',
-      colors: { P0: '#582957', P1: '#B69088', P2: '#A9B69C', P3: '#E1D9EF' }
+      colors: { P0: '#B69088', P1: '#A9B69C', P2: '#E1D9EF' }
     },
     {
       id: 'adobe',
       name: 'Adobe',
-      colors: { P0: '#69362C', P1: '#AD764B', P2: '#706F5B', P3: '#BB8B7B' }
+      colors: { P0: '#706F5B', P1: '#AD764B', P2: '#BB8B7B' }
     }
   ];
 
   let stored = load();
   let tasks = (Array.isArray(stored) && stored.length > 0) ? stored : seed();
+  // Migration: 3-tier priority system — drop any legacy P3 tasks
+  tasks = tasks.filter(t => t.priority !== 'P3');
   let colors = loadColors();
   let theme = localStorage.getItem(THEME_KEY) || 'light';
   let customSets = loadCustomSets();
@@ -1675,7 +1654,15 @@
   function loadCustomSets() {
     try {
       const v = JSON.parse(localStorage.getItem(CUSTOM_SETS_KEY));
-      return Array.isArray(v) ? v : [];
+      if (!Array.isArray(v)) return [];
+      // Migration: drop the P3 slot from any legacy 4-tier custom sets
+      return v.map(s => {
+        if (s && s.colors && 'P3' in s.colors) {
+          const { P3, ...rest } = s.colors;
+          return { ...s, colors: rest };
+        }
+        return s;
+      });
     } catch { return []; }
   }
   function saveCustomSets() {
@@ -1699,8 +1686,8 @@
       { id: rid(), title: "Book dentist appointment",                priority: 'P1', done: false, createdAt: now - day - 1000*60*60*2 },
       { id: rid(), title: "Pick up dry cleaning",                    priority: 'P2', done: true,  createdAt: now - day - 1000*60*60*5 },
       // 3 days ago
-      { id: rid(), title: "Plan weekend trip",                       priority: 'P3', done: true,  createdAt: now - day*3 },
-      { id: rid(), title: "Read chapter 3 of design book",           priority: 'P3', done: false, createdAt: now - day*3 - 1000*60*60*4 },
+      { id: rid(), title: "Plan weekend trip",                       priority: 'P2', done: true,  createdAt: now - day*3 },
+      { id: rid(), title: "Read chapter 3 of design book",           priority: 'P2', done: false, createdAt: now - day*3 - 1000*60*60*4 },
       { id: rid(), title: "Order new running shoes",                 priority: 'P2', done: false, createdAt: now - day*3 - 1000*60*60*6 },
       // 5 days ago
       { id: rid(), title: "Submit expense report",                   priority: 'P1', done: false, createdAt: now - day*5 }
@@ -1768,8 +1755,14 @@
     const q = fb.query(colRef, fb.orderBy('createdAt', 'desc'));
     unsubscribeTasks = fb.onSnapshot(q, (snap) => {
       const cloudTasks = [];
+      const legacyP3Ids = [];
       snap.forEach(d => {
         const data = d.data();
+        // Skip legacy P3 tasks (3-tier migration)
+        if (data.priority === 'P3') {
+          legacyP3Ids.push(d.id);
+          return;
+        }
         cloudTasks.push({
           id: d.id,
           title: data.title || '',
@@ -1779,6 +1772,10 @@
         });
       });
       tasks = cloudTasks;
+      // Clean up legacy P3 docs in cloud (one-time)
+      if (legacyP3Ids.length > 0) {
+        legacyP3Ids.forEach(id => deleteFromCloud(id));
+      }
       // Mirror to localStorage so the next page load has fresh data
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
       render();
@@ -1838,20 +1835,31 @@
         changed = true;
       }
       if (data.colors && typeof data.colors === 'object') {
-        const remote = JSON.stringify(data.colors);
+        // Drop legacy P3 from cloud
+        const { P3, ...cloudColors } = data.colors;
+        const remote = JSON.stringify(cloudColors);
         const local = JSON.stringify(colors);
         if (remote !== local) {
-          colors = { ...DEFAULT_COLORS, ...data.colors };
+          colors = { ...DEFAULT_COLORS, ...cloudColors };
+          // Belt-and-suspenders — don't let stale P3 leak in
+          delete colors.P3;
           localStorage.setItem(COLORS_KEY, JSON.stringify(colors));
           applyColors();
           changed = true;
         }
       }
       if (Array.isArray(data.customSets)) {
-        const remote = JSON.stringify(data.customSets);
+        const cleaned = data.customSets.map(s => {
+          if (s && s.colors && 'P3' in s.colors) {
+            const { P3, ...rest } = s.colors;
+            return { ...s, colors: rest };
+          }
+          return s;
+        });
+        const remote = JSON.stringify(cleaned);
         const local = JSON.stringify(customSets);
         if (remote !== local) {
-          customSets = data.customSets;
+          customSets = cleaned;
           localStorage.setItem(CUSTOM_SETS_KEY, JSON.stringify(customSets));
           changed = true;
         }
@@ -1879,7 +1887,8 @@
     try {
       const c = JSON.parse(localStorage.getItem(COLORS_KEY));
       if (c && typeof c === 'object') {
-        return { ...DEFAULT_COLORS, ...c };
+        const { P3, ...rest } = c; // drop legacy P3
+        return { ...DEFAULT_COLORS, ...rest };
       }
     } catch {}
     return { ...DEFAULT_COLORS };
@@ -1918,7 +1927,7 @@
   }
   function applyColors() {
     const root = document.documentElement;
-    ['P0','P1','P2','P3'].forEach(p => {
+    ['P0','P1','P2'].forEach(p => {
       const key = p.toLowerCase();
       const isLight = isLightColor(colors[p]);
       root.style.setProperty(`--${key}`, colors[p]);
@@ -2084,7 +2093,7 @@
   }
 
   // ---------- List view ----------
-  // Plain-text list, sorted P0 → P3, with toggle for active vs completed.
+  // Plain-text list, sorted P0 → P2, with toggle for active vs completed.
   let listShowingDone = false;
 
   function renderList() {
@@ -2108,7 +2117,7 @@
     // Filter + sort
     const filtered = tasks.filter(t => listShowingDone ? t.done : !t.done);
     const sorted = [...filtered].sort((a, b) => {
-      // P0 first → P3 last
+      // P0 first → P2 last
       const pCmp = a.priority.localeCompare(b.priority);
       if (pCmp !== 0) return pCmp;
       return b.createdAt - a.createdAt; // newer first within same priority
@@ -2231,7 +2240,7 @@
       groups[key].push(t);
     });
     // Within a day, sort by priority order then newest first
-    const pOrder = { P0: 0, P1: 1, P2: 2, P3: 3 };
+    const pOrder = { P0: 0, P1: 1, P2: 2 };
     Object.values(groups).forEach(g => g.sort((a, b) => {
       if (pOrder[a.priority] !== pOrder[b.priority]) return pOrder[a.priority] - pOrder[b.priority];
       return b.createdAt - a.createdAt;
@@ -2459,7 +2468,7 @@
     // Priority chips
     const chipRow = document.createElement('div');
     chipRow.className = 'inline-priority';
-    ['P0','P1','P2','P3'].forEach(p => {
+    ['P0','P1','P2'].forEach(p => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.dataset.p = p;
@@ -2743,7 +2752,7 @@
     const sets = allSets();
     // Determine which set (if any) is currently active
     const currentSetId = sets.find(s =>
-      ['P0','P1','P2','P3'].every(p => s.colors[p].toUpperCase() === colors[p].toUpperCase())
+      ['P0','P1','P2'].every(p => s.colors[p].toUpperCase() === colors[p].toUpperCase())
     )?.id;
 
     sets.forEach(set => {
@@ -2757,11 +2766,10 @@
           <span style="background:${set.colors.P0}"></span>
           <span style="background:${set.colors.P1}"></span>
           <span style="background:${set.colors.P2}"></span>
-          <span style="background:${set.colors.P3}"></span>
         </div>
         <div class="colorset-name">
           ${escapeHtml(set.name)}${set.custom ? '<span class="custom-badge">Custom</span>' : ''}
-          <span class="meta">P0 → P3</span>
+          <span class="meta">P0 → P2</span>
         </div>
         ${set.custom ? `
           <button class="colorset-edit" data-set-id="${set.id}" aria-label="Edit set">
@@ -2821,7 +2829,7 @@
       const swatch = section.querySelector(`.pcolor-row .pcolor-head .pcolor-swatch`);
       // Find the right swatch — match by row position
       const rows = section.querySelectorAll('.pcolor-row');
-      const idx = ['P0','P1','P2','P3'].indexOf(priority);
+      const idx = ['P0','P1','P2'].indexOf(priority);
       if (rows[idx]) {
         rows[idx].querySelector('.pcolor-swatch').style.background = hex;
         rows[idx].querySelectorAll('.pcolor-chip').forEach(c => {
@@ -2835,7 +2843,7 @@
 
   // ---------- Custom set creator ----------
   let editingSetId = null;     // null = new, else editing existing custom set id
-  let draftColors = { P0: '', P1: '', P2: '', P3: '' };
+  let draftColors = { P0: '', P1: '', P2: '' };
 
   function openCustomSetSheet(setId) {
     editingSetId = setId || null;
@@ -2868,7 +2876,7 @@
   function renderCustomRows() {
     const container = document.getElementById('custom-priority-rows');
     container.innerHTML = '';
-    ['P0','P1','P2','P3'].forEach(p => {
+    ['P0','P1','P2'].forEach(p => {
       const row = document.createElement('div');
       row.className = 'custom-priority-row';
       row.innerHTML = `
@@ -2950,8 +2958,8 @@
 
   function saveCustomSet() {
     // Validate colors
-    if (!draftColors.P0 || !draftColors.P1 || !draftColors.P2 || !draftColors.P3) {
-      alert('Pick a color for all four priorities (P0–P3).');
+    if (!draftColors.P0 || !draftColors.P1 || !draftColors.P2) {
+      alert('Pick a color for all three priorities (P0–P2).');
       return;
     }
     let name = document.getElementById('custom-set-name').value.trim();
