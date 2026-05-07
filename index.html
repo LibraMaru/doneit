@@ -9,7 +9,8 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
   import {
-    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+    getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
+    getRedirectResult, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
   import {
     getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot,
@@ -34,7 +35,9 @@
   // Expose just the methods the main app needs
   window.fb = {
     auth, db,
-    signIn: () => signInWithPopup(auth, provider),
+    signInPopup: () => signInWithPopup(auth, provider),
+    signInRedirect: () => signInWithRedirect(auth, provider),
+    getRedirectResult: () => getRedirectResult(auth),
     signOut: () => signOut(auth),
     onAuthChange: (cb) => onAuthStateChanged(auth, cb),
     // Firestore helpers
@@ -2779,14 +2782,34 @@
     }
   }
 
+  // Detect mobile / Safari — these need redirect-based sign-in because
+  // third-party popups are blocked or unreliable on iOS.
+  function shouldUseRedirect() {
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const isAndroid = /Android/i.test(ua);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+    return isIOS || isAndroid || isSafari;
+  }
+
   async function handleSignIn() {
     if (!window.fb) { alert('Sign-in not ready yet, please try again in a moment.'); return; }
     try {
-      await window.fb.signIn();
-      // onAuthChange will fire next; migration logic runs there
+      if (shouldUseRedirect()) {
+        // Full-page redirect to Google. After auth, Google redirects back here
+        // and getRedirectResult() picks it up on next page load.
+        await window.fb.signInRedirect();
+        // Page will navigate away here; nothing else to do.
+      } else {
+        await window.fb.signInPopup();
+      }
     } catch (err) {
       console.error('Sign-in error:', err);
-      if (err && err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+      const ignorable = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/popup-blocked'];
+      if (err && err.code === 'auth/popup-blocked') {
+        // Popup got blocked even on desktop — fall back to redirect
+        try { await window.fb.signInRedirect(); } catch (e) { console.error('Redirect fallback failed:', e); }
+      } else if (err && !ignorable.includes(err.code)) {
         alert('Could not sign in. Please try again.');
       }
     }
@@ -2908,6 +2931,16 @@
 
   function bootAuth() {
     if (!window.fb) return;
+
+    // If we just came back from a Google redirect sign-in, this resolves with
+    // the user. The onAuthChange handler will then fire normally.
+    window.fb.getRedirectResult().catch((err) => {
+      // Common when there's no pending redirect — silent.
+      if (err && err.code && err.code !== 'auth/no-auth-event') {
+        console.error('Redirect result error:', err);
+      }
+    });
+
     window.fb.onAuthChange(async (user) => {
       const wasSignedOut = !currentUser;
       currentUser = user;
