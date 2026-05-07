@@ -471,10 +471,52 @@
     color: var(--on-card);
     word-break: break-word;
     overflow-wrap: anywhere;
+    cursor: text;
   }
   .completed .title {
     text-decoration: line-through;
     text-decoration-color: currentColor;
+  }
+  /* Editable title input — inherits color from card so it blends in */
+  .title-input {
+    width: 100%;
+    font: inherit;
+    font-size: 18px; font-weight: 700; line-height: 1.4;
+    color: var(--on-card);
+    background: transparent;
+    border: none;
+    outline: none;
+    border-bottom: 1px dashed currentColor;
+    padding: 0 0 4px;
+    margin: 0;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+  /* Inline priority chips (only shown while editing) */
+  .inline-priority {
+    display: flex; gap: 6px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .inline-priority button {
+    border: 1px solid currentColor;
+    background: transparent;
+    color: var(--on-card);
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 11px; font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
+  }
+  .inline-priority button:hover { opacity: 0.9; }
+  .inline-priority button.active {
+    opacity: 1;
+    background: var(--on-card);
+    color: var(--card-body);
   }
   .meta {
     margin-top: 8px; font-size: 13px; color: var(--on-card-soft);
@@ -1924,7 +1966,7 @@
         <span class="date">${relativeDate(t.createdAt)}</span>
       </div>
       <div class="body">
-        <div class="title">${escapeHtml(t.title)}</div>
+        <div class="title" data-edit-id="${t.id}">${escapeHtml(t.title)}</div>
       </div>
       <div class="perforation"><div class="dashes"></div></div>
       <div class="footer">
@@ -1947,7 +1989,7 @@
 
     card.addEventListener('pointerdown', (e) => {
       // Don't start drag if user tapped the checkbox or delete button
-      if (e.target.closest('.checkbox') || e.target.closest('.delete-btn')) return;
+      if (e.target.closest('.checkbox') || e.target.closest('.delete-btn') || e.target.closest('.title') || e.target.closest('.title-input') || e.target.closest('.inline-priority')) return;
       dragging = true;
       isHorizontal = null;
       startX = e.clientX;
@@ -2025,7 +2067,7 @@
         <span class="date">${relativeDate(t.createdAt)}</span>
       </div>
       <div class="body">
-        <div class="title">${escapeHtml(t.title)}</div>
+        <div class="title" data-edit-id="${t.id}">${escapeHtml(t.title)}</div>
       </div>
       <div class="perforation"><div class="dashes"></div></div>
       <div class="footer">
@@ -2045,9 +2087,93 @@
     return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  // ---------- Inline edit mode ----------
+  function enterEditMode(titleEl, task) {
+    if (!titleEl || titleEl.classList.contains('editing')) return;
+
+    // Build the editor: replace title text with an input,
+    // and append a row of priority chips below the title.
+    const body = titleEl.parentElement; // .body
+    const originalTitle = task.title;
+    const originalPriority = task.priority;
+    let draftPriority = originalPriority;
+
+    titleEl.classList.add('editing');
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'title-input';
+    input.value = originalTitle;
+    input.maxLength = 200;
+    titleEl.replaceWith(input);
+
+    // Priority chips
+    const chipRow = document.createElement('div');
+    chipRow.className = 'inline-priority';
+    ['P0','P1','P2','P3'].forEach(p => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.dataset.p = p;
+      btn.textContent = `${p} · ${PRIORITY_LABEL[p]}`;
+      if (p === draftPriority) btn.classList.add('active');
+      btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        draftPriority = p;
+        chipRow.querySelectorAll('button').forEach(b =>
+          b.classList.toggle('active', b.dataset.p === p));
+      });
+      chipRow.appendChild(btn);
+    });
+    body.appendChild(chipRow);
+
+    // Focus + place caret at end
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+
+    let saved = false;
+    function commit() {
+      if (saved) return;
+      saved = true;
+      const newTitle = input.value.trim();
+      const finalTitle = newTitle.length > 0 ? newTitle : originalTitle;
+      task.title = finalTitle;
+      task.priority = draftPriority;
+      save();
+      render();
+    }
+    function cancel() {
+      if (saved) return;
+      saved = true;
+      // No state change — just re-render to restore the original DOM
+      render();
+    }
+
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+      else if (ev.key === 'Escape') { ev.preventDefault(); cancel(); }
+    });
+    // Don't let clicks inside the input bubble out to other handlers
+    input.addEventListener('click', (ev) => ev.stopPropagation());
+    input.addEventListener('blur', () => {
+      // Slight delay so a click on a priority chip can land first
+      setTimeout(commit, 100);
+    });
+  }
+
   // ---------- Interactions ----------
 
   feed.addEventListener('click', (e) => {
+    // Inline title-edit
+    const titleEl = e.target.closest('.title[data-edit-id]');
+    if (titleEl && !titleEl.classList.contains('editing')) {
+      const id = titleEl.getAttribute('data-edit-id');
+      const t = tasks.find(x => x.id === id);
+      if (t && !t.done) {
+        enterEditMode(titleEl, t);
+        return;
+      }
+    }
+
     const cb = e.target.closest('.checkbox');
     if (cb) {
       const id = cb.getAttribute('data-id');
