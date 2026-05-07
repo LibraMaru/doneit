@@ -1707,14 +1707,12 @@
   // realtime listener pulls remote changes back.
   let currentUser = null;
   let unsubscribeTasks = null;
-  let suppressNextLocalSave = false;  // set true when applying remote snapshot
 
   function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    if (currentUser && !suppressNextLocalSave) {
+    if (currentUser) {
       pushAllToCloud().catch(err => console.error('Cloud save failed:', err));
     }
-    suppressNextLocalSave = false;
   }
   function load() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; }
@@ -1775,8 +1773,7 @@
         });
       });
       tasks = cloudTasks;
-      // Mirror to localStorage but DON'T trigger another cloud push
-      suppressNextLocalSave = true;
+      // Mirror to localStorage so the next page load has fresh data
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
       render();
     }, (err) => {
