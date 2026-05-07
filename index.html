@@ -437,10 +437,14 @@
   }
 
   /* Card body text adapts to priority color */
-  .card.p0 .title, .card.p0 .check-label, .stack-card.p0 .title, .stack-card.p0 .check-label { color: var(--p0-on); }
-  .card.p1 .title, .card.p1 .check-label, .stack-card.p1 .title, .stack-card.p1 .check-label { color: var(--p1-on); }
-  .card.p2 .title, .card.p2 .check-label, .stack-card.p2 .title, .stack-card.p2 .check-label { color: var(--p2-on); }
-  .card.p3 .title, .card.p3 .check-label, .stack-card.p3 .title, .stack-card.p3 .check-label { color: var(--p3-on); }
+  .card.p0 .title, .stack-card.p0 .title { color: var(--p0-on); font-weight: 800; }
+  .card.p1 .title, .stack-card.p1 .title { color: var(--p1-on); font-weight: 800; }
+  .card.p2 .title, .stack-card.p2 .title { color: var(--p2-on); font-weight: 800; }
+  .card.p3 .title, .stack-card.p3 .title { color: var(--p3-on); font-weight: 800; }
+  .card.p0 .check-label, .stack-card.p0 .check-label { color: color-mix(in srgb, var(--p0-on) 70%, transparent); }
+  .card.p1 .check-label, .stack-card.p1 .check-label { color: color-mix(in srgb, var(--p1-on) 70%, transparent); }
+  .card.p2 .check-label, .stack-card.p2 .check-label { color: color-mix(in srgb, var(--p2-on) 70%, transparent); }
+  .card.p3 .check-label, .stack-card.p3 .check-label { color: color-mix(in srgb, var(--p3-on) 70%, transparent); }
 
   /* Checkbox border + checkmark adapt to card priority */
   .card.p0 .checkbox, .stack-card.p0 .checkbox { border-color: color-mix(in srgb, var(--p0-on) 60%, transparent); }
@@ -711,11 +715,20 @@
     color: var(--ink);
   }
   .sheet .grabber {
-    width: 40px; height: 4px;
-    background: var(--line);
-    border-radius: 2px;
-    margin: 0 auto 14px;
+    width: 48px; height: 5px;
+    background: var(--ink-3);
+    border-radius: 3px;
+    margin: 4px auto 14px;
+    cursor: grab;
+    /* Expand the touchable area without making the visual bigger */
+    position: relative;
   }
+  .sheet .grabber::before {
+    content: '';
+    position: absolute;
+    inset: -16px -120px;
+  }
+  .sheet .grabber:active { cursor: grabbing; background: var(--ink-2); }
   .field { margin-bottom: 16px; }
   .field label {
     display: block; font-size: 12px; font-weight: 600;
@@ -1202,6 +1215,83 @@
   }
   .toggle.on::after { transform: translateX(18px); }
 
+  /* ---------- List view (plain text) ---------- */
+  .list-toggle {
+    display: flex;
+    gap: 0;
+    margin: 4px 16px 16px;
+    padding: 4px;
+    background: var(--bg-2);
+    border-radius: 14px;
+  }
+  .list-toggle-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .list-toggle-btn.active {
+    background: var(--bg);
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  [data-theme="dark"] .list-toggle-btn.active {
+    background: #2a2a2e;
+  }
+
+  .plain-list {
+    margin: 0 16px 24px;
+    background: var(--card-body);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  [data-theme="dark"] .plain-list { background: var(--bg-2); }
+
+  .plain-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line);
+    transition: background 0.15s;
+  }
+  .plain-row:last-child { border-bottom: none; }
+  .plain-row:hover { background: rgba(222, 109, 32, 0.06); }
+  .plain-row.done .plain-title {
+    text-decoration: line-through;
+    color: var(--ink-3);
+  }
+  .plain-title {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.3;
+    word-break: break-word;
+  }
+  .plain-pill {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .plain-row.p0 .plain-pill { background: var(--p0); color: var(--p0-on); }
+  .plain-row.p1 .plain-pill { background: var(--p1); color: var(--p1-on); }
+  .plain-row.p2 .plain-pill { background: var(--p2); color: var(--p2-on); }
+  .plain-row.p3 .plain-pill { background: var(--p3); color: var(--p3-on); }
+
   /* ============================================================
      Responsive scaling — proportional, not piece-by-piece.
      We scale the root font-size (which most em/rem-based properties
@@ -1290,9 +1380,9 @@
       <svg viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></svg>
       Done
     </button>
-    <button class="nav-btn" data-tab="dates">
-      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      Dates
+    <button class="nav-btn" data-tab="list">
+      <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+      List
     </button>
   </nav>
 
@@ -1929,8 +2019,13 @@
   }
 
   function render() {
+    if (activeTab === 'list') {
+      renderList();
+      return;
+    }
     if (activeTab === 'dates') {
-      renderDates();
+      // legacy fallback if someone has an old saved tab state
+      renderList();
       return;
     }
     const list = visibleTasks();
@@ -1952,6 +2047,85 @@
     feed.appendChild(heading);
 
     list.forEach(t => feed.appendChild(cardEl(t)));
+  }
+
+  // ---------- List view ----------
+  // Plain-text list, sorted P0 → P3, with toggle for active vs completed.
+  let listShowingDone = false;
+
+  function renderList() {
+    feed.innerHTML = '';
+
+    // Toggle: Active | Completed
+    const toggleRow = document.createElement('div');
+    toggleRow.className = 'list-toggle';
+    toggleRow.innerHTML = `
+      <button class="list-toggle-btn ${!listShowingDone ? 'active' : ''}" data-list-mode="active">Active</button>
+      <button class="list-toggle-btn ${listShowingDone ? 'active' : ''}" data-list-mode="done">Completed</button>
+    `;
+    feed.appendChild(toggleRow);
+    toggleRow.querySelectorAll('.list-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        listShowingDone = btn.getAttribute('data-list-mode') === 'done';
+        renderList();
+      });
+    });
+
+    // Filter + sort
+    const filtered = tasks.filter(t => listShowingDone ? t.done : !t.done);
+    const sorted = [...filtered].sort((a, b) => {
+      // P0 first → P3 last
+      const pCmp = a.priority.localeCompare(b.priority);
+      if (pCmp !== 0) return pCmp;
+      return b.createdAt - a.createdAt; // newer first within same priority
+    });
+
+    if (sorted.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.innerHTML = `
+        <div class="emo">${listShowingDone ? '🌱' : '☕'}</div>
+        <div class="h">${listShowingDone ? 'Nothing finished yet' : 'No tasks here'}</div>
+        <div class="s">${listShowingDone ? "Check off a task and it'll show up here." : 'Tap + to add your first one.'}</div>
+      `;
+      feed.appendChild(empty);
+      return;
+    }
+
+    const ul = document.createElement('div');
+    ul.className = 'plain-list';
+    sorted.forEach(t => {
+      const row = document.createElement('div');
+      row.className = `plain-row ${t.priority.toLowerCase()}` + (t.done ? ' done' : '');
+      row.setAttribute('data-jump-id', t.id);
+      row.innerHTML = `
+        <span class="plain-title">${escapeHtml(t.title)}</span>
+        <span class="plain-pill">${t.priority}</span>
+      `;
+      row.addEventListener('click', () => {
+        // Jump to the All feed and let the user see/edit the card
+        activeTab = 'all';
+        document.querySelectorAll('.nav-btn').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-tab') === 'all');
+        });
+        // If task is done but they're viewing the active list, switching to All
+        // will hide it — fall back to Done tab in that case
+        if (t.done) {
+          activeTab = 'done';
+          document.querySelectorAll('.nav-btn').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('data-tab') === 'done');
+          });
+        }
+        render();
+        // Smooth scroll to the card
+        setTimeout(() => {
+          const target = feed.querySelector(`[data-edit-id="${t.id}"]`);
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+      });
+      ul.appendChild(row);
+    });
+    feed.appendChild(ul);
   }
 
   // ---------- Dates view ----------
@@ -2371,7 +2545,73 @@
   function openSheet(sheet) {
     sheet.classList.add('open');
     backdrop.classList.add('open');
+    // Reset any in-progress drag transform
+    sheet.style.transform = '';
+    sheet.style.transition = '';
   }
+
+  // Enable drag-down-to-dismiss on the grabber AND on a top edge area of any sheet
+  function enableSheetSwipeDown(sheet) {
+    if (!sheet || sheet.dataset.swipeBound) return;
+    sheet.dataset.swipeBound = '1';
+
+    const grabber = sheet.querySelector('.grabber');
+    let startY = 0;
+    let currentY = 0;
+    let dragging = false;
+    const DISMISS_THRESHOLD = 80; // pixels
+
+    function onStart(e) {
+      const touch = e.touches ? e.touches[0] : e;
+      // Only start drag if on the grabber, on H2 title area, OR if the sheet is scrolled to top
+      const onGrabber = grabber && grabber.contains(e.target);
+      const atTop = sheet.scrollTop <= 0;
+      const isScrollableContent = e.target.closest('.swatch-strip, .colorset-list, .emoji-row, .bg-row');
+      if (!onGrabber && !atTop) return;
+      if (isScrollableContent) return;
+      dragging = true;
+      startY = touch.clientY;
+      currentY = startY;
+      sheet.style.transition = 'none';
+    }
+    function onMove(e) {
+      if (!dragging) return;
+      const touch = e.touches ? e.touches[0] : e;
+      currentY = touch.clientY;
+      const dy = currentY - startY;
+      if (dy < 0) {
+        sheet.style.transform = '';
+        return;
+      }
+      sheet.style.transform = `translateY(${dy}px)`;
+      // Prevent body from scrolling while dragging
+      if (e.cancelable) e.preventDefault();
+    }
+    function onEnd() {
+      if (!dragging) return;
+      dragging = false;
+      const dy = currentY - startY;
+      sheet.style.transition = '';
+      if (dy > DISMISS_THRESHOLD) {
+        sheet.style.transform = '';
+        closeSheets();
+      } else {
+        sheet.style.transform = '';
+      }
+    }
+
+    sheet.addEventListener('touchstart', onStart, { passive: true });
+    sheet.addEventListener('touchmove', onMove, { passive: false });
+    sheet.addEventListener('touchend', onEnd);
+    sheet.addEventListener('touchcancel', onEnd);
+    // Also allow mouse drag for desktop testing
+    sheet.addEventListener('mousedown', onStart);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+  }
+
+  // Bind to all sheets
+  document.querySelectorAll('.sheet').forEach(enableSheetSwipeDown);
   function closeSheets() {
     addSheet.classList.remove('open');
     settingsSheet.classList.remove('open');
