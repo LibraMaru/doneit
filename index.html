@@ -1940,6 +1940,14 @@
     const weekday = d.toLocaleDateString(undefined, { weekday: 'short' }) + '.';
     return `${weekday} ${month} ${day}, ${yy}`;
   }
+  // Same format but no year — used in compact List view rows
+  function shortDate(ts) {
+    const d = new Date(ts);
+    const month = d.toLocaleDateString(undefined, { month: 'short' });
+    const day = d.getDate();
+    const weekday = d.toLocaleDateString(undefined, { weekday: 'short' }) + '.';
+    return `${weekday} ${month} ${day}`;
+  }
 
   // ---------- Date filtering ----------
   function startOfDay(d) {
@@ -2121,7 +2129,7 @@
       row.innerHTML = `
         <span class="plain-pill">${t.priority}</span>
         <span class="plain-title">${escapeHtml(t.title)}</span>
-        <span class="plain-date">${relativeDate(t.createdAt)}</span>
+        <span class="plain-date">${shortDate(t.createdAt)}</span>
       `;
       row.addEventListener('click', () => {
         // Jump to the All feed and let the user see/edit the card
