@@ -492,15 +492,33 @@
     min-height: 60px;
   }
   .title {
-    font-size: 18px; font-weight: 700; line-height: 1.4;
+    font-size: 22px; font-weight: 800; line-height: 1.5;
     color: var(--on-card);
     word-break: break-word;
     overflow-wrap: anywhere;
     cursor: text;
+    /* Marker highlight: brand orange stripe behind the lower half of the text.
+       The 0.45em offset puts it where a real highlighter would sit. */
+    background: linear-gradient(
+      180deg,
+      transparent 0,
+      transparent 55%,
+      rgba(222, 109, 32, 0.45) 55%,
+      rgba(222, 109, 32, 0.45) 92%,
+      transparent 92%
+    );
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    /* Tighten so the highlight only covers actual text, not full row width */
+    display: inline;
+    padding: 0 4px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
   }
   .completed .title {
     text-decoration: line-through;
     text-decoration-color: currentColor;
+    background: none;
   }
   /* Editable title input — inherits color from parent so it matches the
      priority's chosen contrast color (white on dark cards, dark on light) */
