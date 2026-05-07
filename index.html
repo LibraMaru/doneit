@@ -477,12 +477,13 @@
     text-decoration: line-through;
     text-decoration-color: currentColor;
   }
-  /* Editable title input — inherits color from card so it blends in */
+  /* Editable title input — inherits color from parent so it matches the
+     priority's chosen contrast color (white on dark cards, dark on light) */
   .title-input {
     width: 100%;
     font: inherit;
     font-size: 18px; font-weight: 700; line-height: 1.4;
-    color: var(--on-card);
+    color: inherit;
     background: transparent;
     border: none;
     outline: none;
@@ -493,7 +494,13 @@
     overflow-wrap: anywhere;
     font-family: inherit;
     box-sizing: border-box;
+    caret-color: currentColor;
   }
+  /* Make sure the input picks up the priority's text color too */
+  .card.p0 .title-input, .stack-card.p0 .title-input { color: var(--p0-on); }
+  .card.p1 .title-input, .stack-card.p1 .title-input { color: var(--p1-on); }
+  .card.p2 .title-input, .stack-card.p2 .title-input { color: var(--p2-on); }
+  .card.p3 .title-input, .stack-card.p3 .title-input { color: var(--p3-on); }
   /* Inline priority chips (only shown while editing) */
   .inline-priority {
     display: flex; gap: 6px;
@@ -503,7 +510,7 @@
   .inline-priority button {
     border: 1px solid currentColor;
     background: transparent;
-    color: var(--on-card);
+    color: inherit;
     border-radius: 999px;
     padding: 5px 10px;
     font-size: 11px; font-weight: 700;
@@ -515,9 +522,19 @@
   .inline-priority button:hover { opacity: 0.9; }
   .inline-priority button.active {
     opacity: 1;
-    background: var(--on-card);
-    color: var(--card-body);
+    background: currentColor;
   }
+  .inline-priority button.active {
+    /* Inverted swatch — text becomes the card color */
+  }
+  .card.p0 .inline-priority button.active, .stack-card.p0 .inline-priority button.active { color: var(--p0); background: var(--p0-on); }
+  .card.p1 .inline-priority button.active, .stack-card.p1 .inline-priority button.active { color: var(--p1); background: var(--p1-on); }
+  .card.p2 .inline-priority button.active, .stack-card.p2 .inline-priority button.active { color: var(--p2); background: var(--p2-on); }
+  .card.p3 .inline-priority button.active, .stack-card.p3 .inline-priority button.active { color: var(--p3); background: var(--p3-on); }
+  .card.p0 .inline-priority, .stack-card.p0 .inline-priority { color: var(--p0-on); }
+  .card.p1 .inline-priority, .stack-card.p1 .inline-priority { color: var(--p1-on); }
+  .card.p2 .inline-priority, .stack-card.p2 .inline-priority { color: var(--p2-on); }
+  .card.p3 .inline-priority, .stack-card.p3 .inline-priority { color: var(--p3-on); }
   .meta {
     margin-top: 8px; font-size: 13px; color: var(--on-card-soft);
     display: flex; align-items: center; gap: 6px;
