@@ -737,16 +737,17 @@
     background: var(--ink-3);
     border-radius: 3px;
     margin: 4px auto 14px;
-    cursor: grab;
-    /* Expand the touchable area without making the visual bigger */
+    cursor: pointer;
     position: relative;
+    transition: background 0.15s, width 0.15s;
   }
   .sheet .grabber::before {
     content: '';
     position: absolute;
     inset: -16px -120px;
   }
-  .sheet .grabber:active { cursor: grabbing; background: var(--ink-2); }
+  .sheet .grabber:hover { background: var(--ink-2); width: 56px; }
+  .sheet .grabber:active { background: var(--ink); }
   .field { margin-bottom: 16px; }
   .field label {
     display: block; font-size: 12px; font-weight: 600;
@@ -2579,7 +2580,7 @@
     sheet.style.transition = '';
   }
 
-  // Enable drag-down-to-dismiss on the grabber AND on a top edge area of any sheet
+  // Enable drag-down-to-dismiss + tap-to-dismiss on the grabber
   function enableSheetSwipeDown(sheet) {
     if (!sheet || sheet.dataset.swipeBound) return;
     sheet.dataset.swipeBound = '1';
@@ -2588,17 +2589,19 @@
     let startY = 0;
     let currentY = 0;
     let dragging = false;
-    const DISMISS_THRESHOLD = 80; // pixels
+    let movedDistance = 0;
+    const DISMISS_THRESHOLD = 80; // pixels for drag dismiss
+    const TAP_MAX_MOVE = 6;       // pixels — anything less counts as a tap
 
     function onStart(e) {
       const touch = e.touches ? e.touches[0] : e;
-      // Only start drag if on the grabber, on H2 title area, OR if the sheet is scrolled to top
       const onGrabber = grabber && grabber.contains(e.target);
       const atTop = sheet.scrollTop <= 0;
       const isScrollableContent = e.target.closest('.swatch-strip, .colorset-list, .emoji-row, .bg-row');
       if (!onGrabber && !atTop) return;
       if (isScrollableContent) return;
       dragging = true;
+      movedDistance = 0;
       startY = touch.clientY;
       currentY = startY;
       sheet.style.transition = 'none';
@@ -2608,24 +2611,30 @@
       const touch = e.touches ? e.touches[0] : e;
       currentY = touch.clientY;
       const dy = currentY - startY;
+      movedDistance = Math.abs(dy);
       if (dy < 0) {
         sheet.style.transform = '';
         return;
       }
       sheet.style.transform = `translateY(${dy}px)`;
-      // Prevent body from scrolling while dragging
       if (e.cancelable) e.preventDefault();
     }
-    function onEnd() {
+    function onEnd(e) {
       if (!dragging) return;
       dragging = false;
       const dy = currentY - startY;
       sheet.style.transition = '';
+      sheet.style.transform = '';
+
+      // Tap on the grabber (no real drag) → close
+      const tappedGrabber = grabber && e && (e.target === grabber || grabber.contains(e.target));
+      if (movedDistance < TAP_MAX_MOVE && tappedGrabber) {
+        closeTopSheet();
+        return;
+      }
+      // Drag past threshold → close
       if (dy > DISMISS_THRESHOLD) {
-        sheet.style.transform = '';
-        closeSheets();
-      } else {
-        sheet.style.transform = '';
+        closeTopSheet();
       }
     }
 
@@ -2633,10 +2642,42 @@
     sheet.addEventListener('touchmove', onMove, { passive: false });
     sheet.addEventListener('touchend', onEnd);
     sheet.addEventListener('touchcancel', onEnd);
-    // Also allow mouse drag for desktop testing
     sheet.addEventListener('mousedown', onStart);
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onEnd);
+
+    // Direct click handler on the grabber as a backup for taps
+    if (grabber) {
+      grabber.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeTopSheet();
+      });
+    }
+  }
+
+  // Close the topmost open sheet only (so sub-sheets don't blow away the parent)
+  function closeTopSheet() {
+    const customSheet = document.getElementById('custom-set-sheet');
+    const avatarSheet = document.getElementById('avatar-sheet');
+    if (avatarSheet && avatarSheet.classList.contains('open')) {
+      avatarSheet.classList.remove('open');
+      avatarSheet.style.transform = '';
+      // If the settings sheet is still open beneath, keep the backdrop
+      if (!document.getElementById('settings-sheet').classList.contains('open')) {
+        backdrop.classList.remove('open');
+      }
+      return;
+    }
+    if (customSheet && customSheet.classList.contains('open')) {
+      customSheet.classList.remove('open');
+      customSheet.style.transform = '';
+      if (!document.getElementById('settings-sheet').classList.contains('open')) {
+        backdrop.classList.remove('open');
+      }
+      return;
+    }
+    // Otherwise close everything (which is what closeSheets does)
+    closeSheets();
   }
 
   // Bind to all sheets
