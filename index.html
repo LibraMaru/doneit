@@ -451,9 +451,9 @@
   }
 
   /* Card body text adapts to priority color */
-  .card.p0 .title, .stack-card.p0 .title { color: var(--p0-on); font-weight: 800; }
-  .card.p1 .title, .stack-card.p1 .title { color: var(--p1-on); font-weight: 800; }
-  .card.p2 .title, .stack-card.p2 .title { color: var(--p2-on); font-weight: 800; }
+  .card.p0 .title, .stack-card.p0 .title,
+  .card.p1 .title, .stack-card.p1 .title,
+  .card.p2 .title, .stack-card.p2 .title { color: #ffffff; font-weight: 800; }
   .card.p0 .check-label, .stack-card.p0 .check-label { color: color-mix(in srgb, var(--p0-on) 70%, transparent); }
   .card.p1 .check-label, .stack-card.p1 .check-label { color: color-mix(in srgb, var(--p1-on) 70%, transparent); }
   .card.p2 .check-label, .stack-card.p2 .check-label { color: color-mix(in srgb, var(--p2-on) 70%, transparent); }
@@ -487,10 +487,11 @@
     word-break: break-word;
     overflow-wrap: anywhere;
     cursor: text;
-    /* Soft grey drop shadow under the title */
+    /* Multi-layer shadow keeps white title readable on any priority color */
     text-shadow:
-      0 2px 6px rgba(0, 0, 0, 0.35),
-      0 4px 14px rgba(0, 0, 0, 0.22);
+      0 1px 2px rgba(0, 0, 0, 0.45),
+      0 2px 8px rgba(0, 0, 0, 0.35),
+      0 4px 18px rgba(0, 0, 0, 0.25);
   }
   .completed .title {
     text-decoration: line-through;
