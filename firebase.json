@@ -5,6 +5,12 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/__/auth/**",
+        "destination": "https://doneit-202cb.firebaseapp.com/__/auth/**"
+      }
     ]
   }
 }
