@@ -2546,9 +2546,7 @@
       const t = tasks.find(x => x.id === id);
       if (t) {
         if (!t.done) {
-          // Show the check visually first, then move the card after a beat.
-          // We mark .done locally and update the visible elements right away,
-          // but defer save() so the cloud listener doesn't race-rerender us.
+          // Mark done: show check + "Completed" label, then move to Done tab
           const card = cb.closest('.card');
           const pClass = t.priority.toLowerCase();
           cb.classList.add('checked', pClass);
@@ -2557,9 +2555,15 @@
           t.done = true;
           setTimeout(() => { save(); render(); }, 450);
         } else {
+          // Un-check: show the uncheck visually + "Mark as done" label,
+          // then move back to All tab. Same timing pattern as marking done.
+          const card = cb.closest('.card');
+          const pClass = t.priority.toLowerCase();
+          cb.classList.remove('checked', pClass);
+          const label = card && card.querySelector('.check-label');
+          if (label) label.textContent = 'Mark as done';
           t.done = false;
-          save();
-          render();
+          setTimeout(() => { save(); render(); }, 450);
         }
       }
       return;
