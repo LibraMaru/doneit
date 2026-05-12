@@ -35,7 +35,7 @@
 
   const firebaseConfig = {
     apiKey: "AIzaSyA3M-GhsbNV18D6vgXHG2R-90AGudJf9Ws",
-    authDomain: "doneit-202cb.web.app",
+    authDomain: "doneit-202cb.firebaseapp.com",
     databaseURL: "https://doneit-202cb-default-rtdb.firebaseio.com",
     projectId: "doneit-202cb",
     storageBucket: "doneit-202cb.firebasestorage.app",
@@ -628,6 +628,13 @@
     opacity: 0; transition: opacity 0.15s;
   }
   .checkbox.checked svg { opacity: 1; }
+  /* Subtle pop when checkbox flips to checked */
+  @keyframes checkbox-pop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+  .checkbox.checked { animation: checkbox-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
   .check-label {
     font-size: 14px; color: var(--on-card-soft);
@@ -1222,6 +1229,76 @@
     transition: transform 0.2s;
   }
   .toggle.on::after { transform: translateX(18px); }
+
+  /* ---------- Wallet-style stack (All view) ---------- */
+  .wallet-stack {
+    position: relative;
+    margin: 0 16px;
+    height: 480px;
+    transition: height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .wallet-card {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin: 0 !important;
+    transition:
+      transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 0.35s ease,
+      box-shadow 0.35s ease,
+      filter 0.35s ease;
+    cursor: pointer;
+    box-shadow: 0 6px 22px rgba(0,0,0,0.12);
+    transform-origin: top center;
+  }
+  /* Front card — fully visible, full content shown */
+  .wallet-card.front {
+    cursor: default;
+    box-shadow: 0 14px 38px rgba(0,0,0,0.18);
+    z-index: 100;
+  }
+  /* Back-stack cards: only their top sliver peeks out from behind the front.
+     Each successive one shifts down ~14px and scales slightly smaller. */
+  .wallet-card.back {
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  /* Hide internals on back cards — the sliver only shows the top edge */
+  .wallet-card.back .body,
+  .wallet-card.back .perforation,
+  .wallet-card.back .footer,
+  .wallet-card.back .wallet-done-btn {
+    visibility: hidden;
+    pointer-events: none;
+  }
+  /* Tighten the visible top portion of back cards so just the ticket peeks */
+  .wallet-card.back {
+    height: auto;
+  }
+
+  /* Big X dismiss/done button on the front card */
+  .wallet-done-btn {
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.22);
+    color: #fff;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .wallet-done-btn:hover { background: rgba(0,0,0,0.36); }
+  .wallet-done-btn:active { transform: scale(0.92); }
+  .wallet-done-btn svg {
+    width: 18px; height: 18px;
+    stroke: currentColor; fill: none; stroke-width: 2.4;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  /* X button is hidden on back cards (already invisible due to .back rules above) */
 
   /* ---------- List view (plain text) ---------- */
   .list-toggle {
@@ -2083,14 +2160,181 @@
         </div>`;
       return;
     }
+    // All view → wallet-style stack. Done view keeps the original feed.
+    if (activeTab === 'all') {
+      renderWalletStack(list);
+      return;
+    }
     const heading = document.createElement('div');
     heading.className = 'feed-heading';
-    heading.textContent = activeTab === 'done'
-      ? `${list.length} completed`
-      : `${list.length} active`;
+    heading.textContent = `${list.length} completed`;
+    feed.appendChild(heading);
+    list.forEach(t => feed.appendChild(cardEl(t)));
+  }
+
+  // ---------- Wallet-style stack (All view only) ----------
+  // Single front card; up to 4 slivers visible behind it. Cycle by tap or swipe.
+  let frontIndex = 0;             // which task is in front
+  // Shift between back-stack slivers (each sliver below sits this many px lower)
+  const BACK_SHIFT = 14;
+  // Max number of back slivers to render at full opacity
+  const MAX_BACK_VISIBLE = 4;
+
+  function renderWalletStack(list) {
+    feed.innerHTML = '';
+
+    const heading = document.createElement('div');
+    heading.className = 'feed-heading';
+    heading.textContent = `${list.length} active`;
     feed.appendChild(heading);
 
-    list.forEach(t => feed.appendChild(cardEl(t)));
+    // Reset frontIndex if it's out of bounds
+    if (frontIndex >= list.length) frontIndex = Math.max(0, list.length - 1);
+
+    const stack = document.createElement('div');
+    stack.className = 'wallet-stack';
+    feed.appendChild(stack);
+
+    list.forEach((t, i) => {
+      const card = cardEl(t);
+      card.classList.add('wallet-card');
+      card.dataset.taskId = t.id;
+      card.dataset.index = i;
+
+      // Big X — marks done
+      const doneBtn = document.createElement('button');
+      doneBtn.className = 'wallet-done-btn';
+      doneBtn.setAttribute('aria-label', 'Mark as done');
+      doneBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+      doneBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const task = tasks.find(x => x.id === t.id);
+        if (task) {
+          task.done = !task.done;
+          // Front card just left; show next one
+          save();
+          render();
+        }
+      });
+      card.appendChild(doneBtn);
+
+      stack.appendChild(card);
+    });
+
+    layoutWalletStack(list);
+    attachStackSwipe(stack, list);
+  }
+
+  function layoutWalletStack(list) {
+    const stack = feed.querySelector('.wallet-stack');
+    if (!stack) return;
+    const cards = Array.from(stack.querySelectorAll('.wallet-card'));
+    if (cards.length === 0) return;
+
+    // Compute relative position for every card based on frontIndex.
+    // Cards "behind" (higher i) become slivers below the front; cards before it
+    // wrap to the back of the deck so the user can cycle infinitely both ways.
+    cards.forEach((card, i) => {
+      // Distance from front (0 = front, 1 = first sliver behind, etc.)
+      const distance = (i - frontIndex + cards.length) % cards.length;
+
+      if (distance === 0) {
+        // Front card — full size, full opacity
+        card.classList.add('front');
+        card.classList.remove('back');
+        card.style.transform = 'translateY(0) scale(1)';
+        card.style.opacity = '1';
+        card.style.zIndex = String(1000);
+      } else if (distance <= MAX_BACK_VISIBLE) {
+        // Sliver behind — slightly scaled down, pushed up to peek behind front
+        card.classList.add('back');
+        card.classList.remove('front');
+        const shift = distance * BACK_SHIFT;
+        const scale = 1 - distance * 0.04;
+        card.style.transform = `translateY(${shift}px) scale(${scale})`;
+        card.style.opacity = String(1 - distance * 0.06);
+        card.style.zIndex = String(1000 - distance);
+      } else {
+        // Hidden — fully behind, off the visible stack
+        card.classList.add('back');
+        card.classList.remove('front');
+        card.style.transform = `translateY(${MAX_BACK_VISIBLE * BACK_SHIFT}px) scale(${1 - MAX_BACK_VISIBLE * 0.04})`;
+        card.style.opacity = '0';
+        card.style.zIndex = String(0);
+      }
+    });
+  }
+
+  function cycleNext() {
+    const list = visibleTasks();
+    if (list.length === 0) return;
+    frontIndex = (frontIndex + 1) % list.length;
+    layoutWalletStack(list);
+  }
+  function cyclePrev() {
+    const list = visibleTasks();
+    if (list.length === 0) return;
+    frontIndex = (frontIndex - 1 + list.length) % list.length;
+    layoutWalletStack(list);
+  }
+  function bringForward(taskId) {
+    const list = visibleTasks();
+    const i = list.findIndex(t => t.id === taskId);
+    if (i >= 0) {
+      frontIndex = i;
+      layoutWalletStack(list);
+    }
+  }
+
+  // Vertical swipe on the front card cycles the deck
+  function attachStackSwipe(stack, list) {
+    let startY = 0, currentY = 0, dragging = false, moved = 0;
+    const SWIPE_THRESHOLD = 50;
+
+    function onStart(e) {
+      const card = e.target.closest('.wallet-card.front');
+      if (!card) return;
+      // Don't start swipe on interactive elements
+      if (e.target.closest('.wallet-done-btn, .checkbox, .delete-btn, .title-input, .inline-priority, .title')) return;
+      const t = e.touches ? e.touches[0] : e;
+      dragging = true;
+      moved = 0;
+      startY = t.clientY;
+      currentY = startY;
+      card.style.transition = 'none';
+    }
+    function onMove(e) {
+      if (!dragging) return;
+      const t = e.touches ? e.touches[0] : e;
+      currentY = t.clientY;
+      const dy = currentY - startY;
+      moved = Math.abs(dy);
+      const card = stack.querySelector('.wallet-card.front');
+      if (card) card.style.transform = `translateY(${dy}px)`;
+      if (e.cancelable && Math.abs(dy) > 8) e.preventDefault();
+    }
+    function onEnd() {
+      if (!dragging) return;
+      dragging = false;
+      const dy = currentY - startY;
+      const card = stack.querySelector('.wallet-card.front');
+      if (card) {
+        card.style.transition = '';
+        card.style.transform = '';
+      }
+      if (Math.abs(dy) > SWIPE_THRESHOLD) {
+        if (dy < 0) cycleNext();   // swipe up → next
+        else cyclePrev();          // swipe down → previous
+      }
+    }
+
+    stack.addEventListener('touchstart', onStart, { passive: true });
+    stack.addEventListener('touchmove', onMove, { passive: false });
+    stack.addEventListener('touchend', onEnd);
+    stack.addEventListener('touchcancel', onEnd);
+    stack.addEventListener('mousedown', onStart);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
   }
 
   // ---------- List view ----------
@@ -2522,9 +2766,15 @@
   // ---------- Interactions ----------
 
   feed.addEventListener('click', (e) => {
-    // Inline title-edit
+    // Inline title-edit: only allowed on the front card (or non-stack views)
     const titleEl = e.target.closest('.title[data-edit-id]');
     if (titleEl && !titleEl.classList.contains('editing')) {
+      const wcard = titleEl.closest('.wallet-card');
+      if (wcard && !wcard.classList.contains('front')) {
+        // Title tapped on a sliver — bring that card to front instead of editing
+        bringForward(wcard.dataset.taskId);
+        return;
+      }
       const id = titleEl.getAttribute('data-edit-id');
       const t = tasks.find(x => x.id === id);
       if (t && !t.done) {
@@ -2538,8 +2788,24 @@
       const id = cb.getAttribute('data-id');
       const t = tasks.find(x => x.id === id);
       if (t) {
-        t.done = !t.done;
-        save(); render();
+        if (!t.done) {
+          // Visual feedback: flip checkbox + label to "completed" instantly,
+          // then re-render after a beat so the user actually sees their click.
+          const card = cb.closest('.card');
+          const pClass = t.priority.toLowerCase();
+          cb.classList.add('checked', pClass);
+          const label = card && card.querySelector('.check-label');
+          if (label) label.textContent = 'Completed';
+          // Persist immediately, defer the UI shuffle
+          t.done = true;
+          save();
+          setTimeout(() => render(), 450);
+        } else {
+          // Marking done → not-done: instant rerender is fine
+          t.done = false;
+          save();
+          render();
+        }
       }
       return;
     }
@@ -2549,6 +2815,15 @@
       tasks = tasks.filter(t => t.id !== id);
       if (currentUser) deleteFromCloud(id);
       save(); render();
+      return;
+    }
+
+    // Wallet stack: tap a back sliver to bring it forward
+    if (activeTab === 'all') {
+      const wcard = e.target.closest('.wallet-card.back');
+      if (wcard) {
+        bringForward(wcard.dataset.taskId);
+      }
     }
   });
 
@@ -3090,19 +3365,30 @@
     const syncBar = document.getElementById('sync-bar');
     const signedOutCard = document.getElementById('account-signed-out');
     const signedInCard = document.getElementById('account-signed-in');
+    if (!syncBar || !signedOutCard || !signedInCard) {
+      // DOM might not be fully ready (rare edge case); retry next frame
+      requestAnimationFrame(updateAuthUI);
+      return;
+    }
 
     if (currentUser) {
+      // Hide sync banner
       syncBar.classList.add('hidden');
+      syncBar.style.display = 'none';
+      // Swap account cards
       signedOutCard.style.display = 'none';
       signedInCard.style.display = '';
-      document.getElementById('account-name').textContent =
-        currentUser.displayName || currentUser.email || 'Signed in';
-      document.getElementById('account-email').textContent = currentUser.email || '';
+      const nameEl = document.getElementById('account-name');
+      const emailEl = document.getElementById('account-email');
+      if (nameEl) nameEl.textContent = currentUser.displayName || currentUser.email || 'Signed in';
+      if (emailEl) emailEl.textContent = currentUser.email || '';
       renderAccountAvatar();
     } else {
       syncBar.classList.remove('hidden');
+      syncBar.style.display = '';
       signedOutCard.style.display = '';
       signedInCard.style.display = 'none';
+      renderAccountAvatar();
     }
   }
 
@@ -3256,14 +3542,25 @@
   function bootAuth() {
     if (!window.fb) return;
 
-    // If we just came back from a Google redirect sign-in, this resolves with
-    // the user. The onAuthChange handler will then fire normally.
-    window.fb.getRedirectResult().catch((err) => {
-      // Common when there's no pending redirect — silent.
-      if (err && err.code && err.code !== 'auth/no-auth-event') {
-        console.error('Redirect result error:', err);
-      }
-    });
+    // First, await any pending redirect sign-in. This MUST complete before
+    // onAuthStateChanged fires reliably with the user on iOS Safari,
+    // otherwise Safari can lose the redirect result silently.
+    let redirectChecked = false;
+    window.fb.getRedirectResult()
+      .then((result) => {
+        redirectChecked = true;
+        if (result && result.user) {
+          console.log('Signed in via redirect:', result.user.email);
+          // onAuthChange will fire next; nothing else to do here
+        }
+      })
+      .catch((err) => {
+        redirectChecked = true;
+        if (err && err.code && err.code !== 'auth/no-auth-event') {
+          console.error('Redirect result error:', err);
+          alert('Sign-in failed: ' + (err.message || err.code));
+        }
+      });
 
     window.fb.onAuthChange(async (user) => {
       const wasSignedOut = !currentUser;
@@ -3318,6 +3615,16 @@
   // Firebase loads asynchronously; wait for ready event if not yet attached
   if (window.fb) bootAuth();
   else window.addEventListener('firebase-ready', bootAuth, { once: true });
+
+  // Safari/iOS: when the user navigates back from Google sign-in, the browser
+  // may restore a cached page (bfcache). Force a UI refresh to reflect actual
+  // auth state, otherwise the sync banner might still be showing.
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+      // Page came from bfcache — re-apply current auth UI
+      updateAuthUI();
+    }
+  });
 
   // Mouse drag-to-scroll for date filters (desktop). Mobile already
   // supports horizontal swipe natively via overflow-x.
