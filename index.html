@@ -2546,15 +2546,16 @@
       const t = tasks.find(x => x.id === id);
       if (t) {
         if (!t.done) {
-          // Show the check visually first, then move the card after a beat
+          // Show the check visually first, then move the card after a beat.
+          // We mark .done locally and update the visible elements right away,
+          // but defer save() so the cloud listener doesn't race-rerender us.
           const card = cb.closest('.card');
           const pClass = t.priority.toLowerCase();
           cb.classList.add('checked', pClass);
           const label = card && card.querySelector('.check-label');
           if (label) label.textContent = 'Completed';
           t.done = true;
-          save();
-          setTimeout(() => render(), 450);
+          setTimeout(() => { save(); render(); }, 450);
         } else {
           t.done = false;
           save();
