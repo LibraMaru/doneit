@@ -1093,13 +1093,23 @@
     display: flex; gap: 8px;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 12px 18px 6px;
+    /* Padding here applies to the visible viewport, not the scrollable content.
+       For consistent insets that match the cards below, we add margin to the
+       first and last pills below instead. */
+    padding: 12px 0 6px;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
     cursor: grab;
+  }
+  /* Inset the first/last pills so they line up with the card edges */
+  .date-filters > .date-pill:first-child {
+    margin-left: max(18px, env(safe-area-inset-left, 0px) + 18px);
+  }
+  .date-filters > .date-pill:last-child {
+    margin-right: max(18px, env(safe-area-inset-right, 0px) + 18px);
   }
   .date-filters::-webkit-scrollbar { display: none; }
   .date-filters.dragging { cursor: grabbing; }
